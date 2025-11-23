@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Management System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; line-height: 1.6; background: #f4f4f4; }
+        .navbar { background: #2c3e50; color: white; padding: 1rem; }
+        .navbar a { color: white; text-decoration: none; margin-right: 1rem; }
+        .navbar a:hover { text-decoration: underline; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .alert { padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .card { background: white; border: 1px solid #ddd; padding: 1.5rem; margin: 1rem 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn { display: inline-block; padding: 0.5rem 1rem; background: #3498db; color: white; text-decoration: none; border-radius: 4px; border: none; cursor: pointer; margin: 0.25rem; }
+        .btn:hover { background: #2980b9; }
+        .btn-success { background: #27ae60; }
+        .btn-success:hover { background: #219a52; }
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+        .form-control { width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; background: white; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; font-weight: bold; }
+        .text-right { text-align: right; }
+        .float-right { float: right; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        {% if user.is_authenticated %}
+            {% if user.is_superuser %}
+                <a href="/admin/">Admin Panel</a>
+            {% else %}
+                <a href="{% url 'customer_dashboard' %}">Dashboard</a>
+                <a href="{% url 'apply_loan' %}">Apply for Loan</a>
+            {% endif %}
+            <a href="{% url 'logout' %}" class="float-right">Logout ({{ user.username }})</a>
+        {% else %}
+            <a href="{% url 'home' %}">Home</a>
+            <a href="{% url 'customer_login' %}" class="float-right">Customer Login</a>
+            <a href="{% url 'customer_signup' %}" class="float-right">Customer Signup</a>
+        {% endif %}
+    </div>
+    
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        
+        {% block content %}
+        {% endblock %}
+    </div>
+</body>
+</html>

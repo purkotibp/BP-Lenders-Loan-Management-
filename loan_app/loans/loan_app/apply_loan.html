@@ -1,0 +1,49 @@
+{% extends 'loan_app/base.html' %}
+
+{% block content %}
+<h1 style="color: #2c3e50; margin-bottom: 2rem;">Apply for Loan</h1>
+
+<div class="card">
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label>Loan Type *</label>
+            {{ form.loan_type }}
+        </div>
+        
+        <div class="form-group">
+            <label>Requested Amount *</label>
+            {{ form.requested_amount }}
+        </div>
+        
+        <div class="form-group">
+            <label>Credit Score (0-850) *</label>`
+            {{ form.credit_score }}
+        </div>
+        
+        <div class="form-group">
+            <label>Purpose of Loan *</label>
+            {{ form.purpose }}
+        </div>
+        
+        <button type="submit" class="btn btn-success">Submit Application</button>
+        <a href="{% url 'customer_dashboard' %}" class="btn">Cancel</a>
+    </form>
+</div>
+
+<div class="card">
+    <h3 style="color: #3498db; margin-bottom: 1rem;">Available Loan Types</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+        {% for loan_type in loan_types %}
+        <div style="border: 1px solid #ddd; padding: 1rem; border-radius: 4px;">
+            <h4>{{ loan_type.name }}</h4>
+            <p><strong>Max Amount:</strong> ${{ loan_type.max_amount }}</p>
+            <p><strong>Interest Rate:</strong> {{ loan_type.interest_rate }}%</p>
+            <p><strong>Duration:</strong> {{ loan_type.duration_months }} months</p>
+            <p>{{ loan_type.description }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
