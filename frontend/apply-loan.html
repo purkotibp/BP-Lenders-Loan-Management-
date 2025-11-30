@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply for Loan - Loan Management System</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="nav-logo">LoanSystem</h1>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="apply-loan.html" class="nav-link active">Apply for Loan</a>
+                <button onclick="auth.logout()" class="btn btn-outline">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="form-container">
+            <h2>Apply for Loan</h2>
+            
+            <div class="card">
+                <h3>Available Loan Types</h3>
+                <div id="loanTypes" class="loan-types-grid">
+                    <!-- Loan types will be loaded here -->
+                </div>
+            </div>
+
+            <form id="loanApplicationForm">
+                <div class="form-group">
+                    <label>Loan Type *</label>
+                    <select name="loan_type" required class="form-control" id="loanTypeSelect">
+                        <option value="">Select Loan Type</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Requested Amount *</label>
+                    <input type="number" name="requested_amount" step="0.01" required class="form-control" id="requestedAmount">
+                    <small id="maxAmountHint"></small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Credit Score (0-850) *</label>
+                    <input type="number" name="credit_score" min="0" max="850" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>Purpose of Loan *</label>
+                    <textarea name="purpose" required class="form-control" rows="4"></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block">Submit Application</button>
+                <a href="dashboard.html" class="btn btn-outline btn-block">Cancel</a>
+            </form>
+        </div>
+    </div>
+
+    <div id="message" class="message"></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/loan.js"></script>
+    <script>
+        // Check authentication
+        if (!auth.checkLoginStatus()) {
+            window.location.href = 'login.html';
+        }
+
+        // Load loan types
+        loan.loadLoanTypes();
+
+        // Handle form submission
+        document.getElementById('loanApplicationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const response = await loan.submitApplication(new FormData(this));
+            
+            if (response.success) {
+                showMessage('Application submitted successfully!', 'success');
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 2000);
+            } else {
+                showMessage(response.error, 'error');
+            }
+        });
+
+        // Update max amount hint
+        document.getElementById('loanTypeSelect').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const maxAmount = selectedOption.getAttribute('data-max-amount');
+            if (maxAmount) {
+                document.getElementById('maxAmountHint').textContent = `Maximum amount: $${maxAmount}`;
+                document.getElementById('requestedAmount').max = maxAmount;
+            } else {
+                document.getElementById('maxAmountHint').textContent = '';
+            }
+        });
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Management System</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="nav-logo">LoanSystem</h1>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link active">Home</a>
+                <a href="login.html" class="nav-link">Login</a>
+                <a href="signup.html" class="nav-link">Sign Up</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="hero-section">
+            <h1>Welcome to Loan Management System</h1>
+            <p>Manage your loans efficiently and securely with our advanced platform</p>
+            <div class="cta-buttons">
+                <a href="signup.html" class="btn btn-primary">Get Started</a>
+                <a href="login.html" class="btn btn-secondary">Login</a>
+            </div>
+        </div>
+
+        <div class="features-section">
+            <div class="feature-card">
+                <h3>Easy Application</h3>
+                <p>Simple and quick loan application process</p>
+            </div>
+            <div class="feature-card">
+                <h3>Fast Approval</h3>
+                <p>Quick approval using advanced algorithms</p>
+            </div>
+            <div class="feature-card">
+                <h3>Secure</h3>
+                <p>Your data is protected with enterprise security</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Check if user is already logged in
+        auth.checkLoginStatus();
+    </script>
+</body>
+</html>
