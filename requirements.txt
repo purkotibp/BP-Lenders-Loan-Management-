@@ -1,0 +1,24 @@
+# Core Engine (Updated for Python 3.14 compatibility)
+Django>=5.1
+asgiref>=3.8.1
+sqlparse>=0.5.1
+pytz>=2024.1
+
+# Database & Environment
+python-decouple>=3.8
+dj-database-url>=2.1.0
+psycopg2-binary>=2.9.9
+
+# UI & Features
+django-jazzmin>=3.0.1
+django-widget-tweaks>=1.5.0
+django-cleanup>=9.0.0
+django-mathfilters>=1.0.0
+Pillow>=10.3.0
+
+# Deployment & Utilities
+gunicorn>=22.0.0
+whitenoise>=6.7.0
+lazy-object-proxy>=1.10.0
+six>=1.16.0
+wrapt>=1.17.0
