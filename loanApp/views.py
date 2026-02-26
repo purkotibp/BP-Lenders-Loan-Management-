@@ -1,9 +1,10 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from .forms import LoanRequestForm, LoanTransactionForm
-from .models import loanRequest, loanTransaction, CustomerLoan
-from django.shortcuts import redirect
+from .models import loanRequest, loanTransaction, CustomerLoan, EMIPayment
+from django.shortcuts import redirect, get_object_or_404
 from django.http import HttpResponseRedirect, HttpResponse
+from datetime import date
 
 from django.db.models import Sum
 # Create your views here.
@@ -105,6 +106,27 @@ def UserDashboard(request):
     }
 
     return render(request, 'loanApp/user_dashboard.html', context=dict)
+
+
+@login_required(login_url='/account/login-customer')
+def EMISchedule(request, loan_id):
+    loan = get_object_or_404(loanRequest, id=loan_id, customer=request.user.customer)
+    schedule = EMIPayment.objects.filter(loan=loan)
+
+    # Totals for summary row
+    total_emi = sum(p.emi_amount for p in schedule)
+    total_interest = sum(p.interest_component for p in schedule)
+    total_principal = sum(p.principal_component for p in schedule)
+
+    context = {
+        'loan': loan,
+        'schedule': schedule,
+        'total_emi': total_emi,
+        'total_interest': total_interest,
+        'total_principal': total_principal,
+        'today': date.today(),
+    }
+    return render(request, 'loanApp/emi_schedule.html', context)
 
 
 def error_404_view(request, exception):

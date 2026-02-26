@@ -9,5 +9,5 @@ urlpatterns = [
     path('user-transaction/', views.UserTransaction, name='user_transaction'),
     path('user-loan-history/', views.UserLoanHistory, name='user_loan_history'),
     path('user-dashboard/', views.UserDashboard, name='user_dashboard'),
-
+    path('emi-schedule/<int:loan_id>/', views.EMISchedule, name='emi_schedule'),
 ]

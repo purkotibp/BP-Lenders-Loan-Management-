@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import user_passes_test
-from loanApp.models import loanCategory, loanRequest, CustomerLoan, loanTransaction
+from loanApp.models import loanCategory, loanRequest, CustomerLoan, loanTransaction, EMIPayment
 from .forms import LoanCategoryForm
 from loginApp.models import CustomerSignUp
 from django.contrib.auth.models import User
@@ -148,6 +148,9 @@ def approved_request(request, id):
         save_loan.save()
 
     loanRequest.objects.filter(id=id).update(status='approved')
+    # Auto-generate EMI amortization schedule for this loan
+    loan_obj.refresh_from_db()
+    loan_obj.generate_emi_schedule(loan_obj)
     loanrequest = loanRequest.objects.filter(status='pending')
     return render(request, 'admin/request_user.html', context={'loanrequest': loanrequest})
 

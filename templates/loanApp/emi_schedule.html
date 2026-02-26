@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title_block %}EMI Amortization Schedule{% endblock %}
+
+{% block css_block %}
+<style>
+    .summary-card {
+        border-left: 4px solid;
+    }
+    .summary-card.primary { border-color: #0d6efd; }
+    .summary-card.success { border-color: #198754; }
+    .summary-card.warning { border-color: #ffc107; }
+    .summary-card.info   { border-color: #0dcaf0; }
+
+    .table thead th {
+        background-color: #212529;
+        color: #fff;
+        vertical-align: middle;
+    }
+    .badge-paid   { background-color: #198754; }
+    .badge-pending{ background-color: #ffc107; color: #212529; }
+    .badge-overdue{ background-color: #dc3545; }
+</style>
+{% endblock %}
+
+{% block body_block %}
+{% include 'navbar.html' %}
+
+<div class="container my-5">
+
+    <!-- Page heading -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="text-primary mb-1">EMI Amortization Schedule</h1>
+            <p class="text-muted mb-0">
+                Loan #{{ loan.id }} &mdash; {{ loan.category }} &mdash;
+                Requested {{ loan.request_date }}
+            </p>
+        </div>
+        <a href="{% url 'loanApp:user_loan_history' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Loans
+        </a>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card shadow-sm summary-card primary h-100">
+                <div class="card-body">
+                    <p class="text-muted small mb-1">Principal Amount</p>
+                    <h4 class="fw-bold text-primary">{{ loan.amount }} Tk</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card shadow-sm summary-card warning h-100">
+                <div class="card-body">
+                    <p class="text-muted small mb-1">Total Interest</p>
+                    <h4 class="fw-bold text-warning">{{ total_interest|floatformat:2 }} Tk</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card shadow-sm summary-card success h-100">
+                <div class="card-body">
+                    <p class="text-muted small mb-1">Total Payable</p>
+                    <h4 class="fw-bold text-success">{{ total_emi|floatformat:2 }} Tk</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card shadow-sm summary-card info h-100">
+                <div class="card-body">
+                    <p class="text-muted small mb-1">Tenure</p>
+                    <h4 class="fw-bold text-info">{{ loan.year }} Year(s) / {{ schedule|length }} EMIs</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Amortization table -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table text-center table-hover table-bordered table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Due Date</th>
+                            <th>EMI Amount (Tk)</th>
+                            <th>Principal (Tk)</th>
+                            <th>Interest (Tk)</th>
+                            <th>Balance (Tk)</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in schedule %}
+                        <tr>
+                            <td>{{ payment.installment_no }}</td>
+                            <td>{{ payment.due_date }}</td>
+                            <td class="fw-semibold">{{ payment.emi_amount }}</td>
+                            <td>{{ payment.principal_component }}</td>
+                            <td class="text-warning">{{ payment.interest_component }}</td>
+                            <td>{{ payment.balance }}</td>
+                            <td>
+                                {% if payment.is_paid %}
+                                    <span class="badge badge-paid">Paid</span>
+                                {% elif payment.due_date < today %}
+                                    <span class="badge badge-overdue">Overdue</span>
+                                {% else %}
+                                    <span class="badge badge-pending">Pending</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-muted py-4">
+                                No EMI schedule generated yet.
+                                Schedule is created automatically when a loan is approved.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    {% if schedule %}
+                    <tfoot class="table-dark fw-bold">
+                        <tr>
+                            <td colspan="2">Total</td>
+                            <td>{{ total_emi|floatformat:2 }}</td>
+                            <td>{{ total_principal|floatformat:2 }}</td>
+                            <td>{{ total_interest|floatformat:2 }}</td>
+                            <td>&mdash;</td>
+                            <td>&mdash;</td>
+                        </tr>
+                    </tfoot>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% include 'footer.html' %}
+{% endblock %}
