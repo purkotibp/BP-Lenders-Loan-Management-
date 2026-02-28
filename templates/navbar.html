@@ -86,11 +86,13 @@
                     <li class="nav-item">
                         <b> <a class="nav-link" href="/account/signup-customer">Signup</a></b>
                     </li>
-                    <li class="nav-item">
-                        <b> <a class="nav-link" href="/manager/admin-login">Admin</a></b>
-                    </li>
-
                     {% endif %}
+
+                {% if user.is_staff %}
+                    <li class="nav-item">
+                        <b><a class="nav-link" href="/admin/">Admin Panel</a></b>
+                    </li>
+                {% endif %}
 
                 </ul>
             </div>

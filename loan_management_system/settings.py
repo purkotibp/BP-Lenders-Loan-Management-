@@ -14,7 +14,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '0k7(=3xy503l5nio^)k29b1ryxyfm)r%k)))4xqq3li4)og%9c'
+SECRET_KEY = '1234567890-'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'bootstrap4',
     'mathfilters',
     'django_heroku',
-    # 'bootstrap4',  # <--- Add this line
+    'django.shortcuts',
+        
 
     # 'mathfiltersbootstrap5'
 
@@ -140,3 +141,57 @@ LOGIN_URL = '/account/login/'
 django_heroku.settings(locals())
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# ─────────────────────────────────────────────
+# Jazzmin Admin UI Configuration
+# ─────────────────────────────────────────────
+JAZZMIN_SETTINGS = {
+    "site_title": "LMS Admin",
+    "site_header": "Loan Management System",
+    "site_brand": "LMS",
+    "welcome_sign": "Welcome to the Loan Management System",
+    "copyright": "Loan Management System",
+
+    "topmenu_links": [
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"model": "loanApp.loanrequest"},
+        {"name": "Logout", "url": "logout"},
+    ],
+
+    "show_sidebar": True,
+    "navigation_expanded": True,
+
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "loginApp.CustomerSignUp": "fas fa-user-circle",
+        "loanApp.loanrequest": "fas fa-file-invoice-dollar",
+        "loanApp.loancategory": "fas fa-tags",
+        "loanApp.customerloan": "fas fa-wallet",
+        "loanApp.loantransaction": "fas fa-exchange-alt",
+        "loanApp.emipayment": "fas fa-calendar-check",
+    },
+
+    "order_with_respect_to": [
+        "loanApp",
+        "loanApp.loanrequest",
+        "loanApp.emipayment",
+        "loanApp.customerloan",
+        "loanApp.loantransaction",
+        "loanApp.loancategory",
+        "loginApp",
+        "loginApp.customersignup",
+        "auth",
+    ],
+
+    "hide_apps": ["managerApp"],
+    "hide_models": [],
+
+    "related_modal_active": True,
+    "use_google_fonts_cdn": True,
+    "show_ui_builder": False,
+}
+
+# settings.py
+LOGOUT_REDIRECT_URL = '/admin/'  # Where to go after logout
+# This allows logout via GET request (the old way)
