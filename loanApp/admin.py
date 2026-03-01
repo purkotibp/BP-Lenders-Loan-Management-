@@ -120,13 +120,27 @@ from django.utils.html import format_html
 from django.urls import path, reverse
 from django.shortcuts import redirect
 
+@admin.register(loanRequest)
 class LoanRequestAdmin(admin.ModelAdmin):
+    # --- UI CONFIGURATION ---
+    actions = None  
+    actions_selection_counter = False  
+    search_fields = (
+        'customer__user__username', 
+        'customer__first_name', 
+        'customer__last_name'
+    )
+
     def has_add_permission(self, request):
         return False
-    # 1. Define your helper methods FIRST inside the class
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    # --- HELPER METHODS ---
     def customer_name(self, obj):
         return obj.customer.user.username
-    customer_name.short_description = "Customer"
+    customer_name.short_description = "Custom "
 
     def amount_display(self, obj):
         return f"{obj.amount:,} Tk"
@@ -144,28 +158,28 @@ class LoanRequestAdmin(admin.ModelAdmin):
     emi_schedule_link.short_description = "EMI Schedule"
 
     def view_documents(self, obj):
-        # MAKE SURE 'document' IS THE CORRECT FIELD NAME IN YOUR MODEL
         if hasattr(obj, 'document') and obj.document:
             return format_html('<a class="btn btn-info btn-sm" href="{}" target="_blank">View Doc</a>', obj.document.url)
         return "No Doc"
 
     def loan_actions(self, obj):
+        # REPLACED: Removed the 'approved' block and 'Regenerate' button
         if obj.status == 'pending':
             return format_html(
                 '<a class="btn btn-success btn-sm" href="approve/{}/" style="color:white;background:#28a745;padding:2px 5px;margin-right:4px;">Approve</a>'
                 '<a class="btn btn-danger btn-sm" href="reject/{}/" style="color:white;background:#dc3545;padding:2px 5px;">Reject</a>',
                 obj.pk, obj.pk
             )
-        return "Processed"
+        return format_html('<span style="color:gray;">Processed</span>')
 
-    # 2. Now set list_display referencing the names above
+    # --- LIST DISPLAY ---
     list_display = (
         'id', 'customer_name', 'category', 'amount_display',
         'year', 'status_badge', 'view_documents', 'loan_actions', 
         'request_date', 'emi_schedule_link',
     )
 
-    # 3. Handle the URLs for the buttons
+    # --- URL HANDLERS ---
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
@@ -176,9 +190,17 @@ class LoanRequestAdmin(admin.ModelAdmin):
 
     def approve_loan(self, request, loan_id):
         loan = self.get_object(request, loan_id)
-        loan.status = 'approved'
-        loan.save()
-        self.message_user(request, f"Loan {loan_id} Approved")
+        
+        # Only process if not already approved to protect existing EMI data
+        if loan.status != 'approved':
+            loan.status = 'approved'
+            # This triggers the logic in models.py
+            loan.generate_emi_schedule() 
+            loan.save()
+            self.message_user(request, f"Loan {loan_id} Approved and EMI Schedule Generated")
+        else:
+            self.message_user(request, f"Loan {loan_id} is already approved.", level='info')
+            
         return redirect('admin:loanApp_loanrequest_changelist')
 
     def reject_loan(self, request, loan_id):
@@ -187,7 +209,6 @@ class LoanRequestAdmin(admin.ModelAdmin):
         loan.save()
         self.message_user(request, f"Loan {loan_id} Rejected", level='warning')
         return redirect('admin:loanApp_loanrequest_changelist')
-
 # ─────────────────────────────────────────────
 # Customer Loan (balance ledger)
 # ─────────────────────────────────────────────

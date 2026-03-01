@@ -5,6 +5,8 @@ import uuid
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import date
 from dateutil.relativedelta import relativedelta
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 # Create your models here.
 
 
@@ -30,6 +32,7 @@ class loanRequest(models.Model):
     amount = models.PositiveIntegerField(default=0)
     year = models.PositiveIntegerField(default=1)
 
+    document = models.FileField(upload_to='loan_docs/', null=True, blank=True)
     def __str__(self):
         return self.customer.user.username
 
@@ -129,3 +132,21 @@ def _generate_emi_schedule(loan_instance):
 
 # Attach the method to loanRequest
 loanRequest.generate_emi_schedule = _generate_emi_schedule
+@receiver(post_save, sender=EMIPayment)
+def delete_loan_on_completion(sender, instance, **kwargs):
+    """
+    Automatically deletes the loanRequest and associated data 
+    once the final EMI installment is marked as paid.
+    """
+    loan = instance.loan
+    
+    # Check if this specific save was marking an EMI as paid
+    if instance.is_paid:
+        # Check if there are ANY installments still left to pay
+        has_pending_emi = EMIPayment.objects.filter(loan=loan, is_paid=False).exists()
+        
+        if not has_pending_emi:
+            # All EMIs are paid! Delete the loan request.
+            # Because of models.CASCADE, this will also clean up the EMI table.
+            print(f"Loan ID {loan.id} for {loan.customer.user.username} is fully paid. Deleting record...")
+            loan.delete()
