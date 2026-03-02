@@ -208,7 +208,7 @@ class LoanRequestAdmin(admin.ModelAdmin):
         loan.status = 'rejected'
         loan.save()
         self.message_user(request, f"Loan {loan_id} Rejected", level='warning')
-        return redirect('admin:loanApp_loanrequest_changelist')
+        return redirect('admin:loanApp_loanrequest_changelist')b
 # ─────────────────────────────────────────────
 # Customer Loan (balance ledger)
 # ─────────────────────────────────────────────
