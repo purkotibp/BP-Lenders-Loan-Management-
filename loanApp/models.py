@@ -48,17 +48,26 @@ class CustomerLoan(models.Model):
 
 
 class loanTransaction(models.Model):
+    # Choices to define the direction of money
+    TRANSACTION_TYPES = (
+        ('out', 'Loan Disbursement (Out)'),
+        ('in', 'EMI Collection (In)'),
+    )
+
     customer = models.ForeignKey(
         CustomerSignUp, on_delete=models.CASCADE, related_name='transaction_customer')
 
     transaction = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False)
+    
+    # Adding the category field
+    category = models.CharField(max_length=10, choices=TRANSACTION_TYPES, default='in')
+    
     payment = models.PositiveIntegerField(default=0)
     payment_date = models.DateField(auto_now_add=True)
 
     def __str__(self):
-        return self.customer.user.username
-
+        return f"{self.customer.user.username} - {self.get_category_display()}"
 
 class EMIPayment(models.Model):
     loan = models.ForeignKey(

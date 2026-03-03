@@ -41,76 +41,104 @@ class EMIPaymentInline(admin.TabularInline):
 # ─────────────────────────────────────────────
 # Loan Category
 # ─────────────────────────────────────────────
+from django.contrib import admin, messages
+from django.contrib.auth.hashers import check_password
+from django.shortcuts import render, redirect
+from django.urls import path, reverse
+from django.utils.html import format_html
+from datetime import date
+from django.db.models import F
+
+# Check your models.py for the exact spelling of these names
+from .models import loanCategory, loanTransaction, CustomerLoan
+# If your model is actually named 'loanRequest' with a small 'l', use that here:
+try:
+    from .models import LoanRequest
+except ImportError:
+    from .models import loanRequest as LoanRequest
+
+# ─────────────────────────────────────────────
+# Loan Category with Password Intercept
+# ─────────────────────────────────────────────
 @admin.register(loanCategory)
 class LoanCategoryAdmin(admin.ModelAdmin):
     list_display = ('id', 'loan_name', 'creation_date', 'updated_date')
     search_fields = ('loan_name',)
     ordering = ('loan_name',)
 
+    def has_delete_permission(self, request, obj=None):
+        return False
 
+    def save_model(self, request, obj, form, change):
+        if not change:  # Only for ADDING new categories
+            request.session['pending_category_name'] = obj.loan_name
+            return 
+        super().save_model(request, obj, form, change)
+
+    def response_add(self, request, obj, post_url_continue=None):
+        return redirect('admin:secure_confirm_category')
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('confirm-add/', self.admin_site.admin_view(self.secure_confirm_view), name='secure_confirm_category'),
+        ]
+        return custom_urls + urls
+
+    def secure_confirm_view(self, request):
+        if request.method == 'POST':
+            password = request.POST.get('password')
+            if check_password(password, request.user.password):
+                loan_name = request.session.get('pending_category_name')
+                if loan_name:
+                    loanCategory.objects.create(loan_name=loan_name)
+                    del request.session['pending_category_name']
+                    messages.success(request, "New category added securely.")
+                    return redirect('admin:loanApp_loancategory_changelist')
+            else:
+                messages.error(request, "Incorrect password. Category not created.")
+                return redirect('admin:loanApp_loancategory_changelist')
+
+        context = self.admin_site.each_context(request)
+        return render(request, 'loanApp/confirm_password.html', context)        
 # ─────────────────────────────────────────────
-# Custom admin actions for LoanRequest
+# Loan Approval Helper
 # ─────────────────────────────────────────────
 def _process_loan_approval(loan_obj):
-    """Core approval logic - same as managerApp.views.approved_request."""
     today = date.today()
     loan_obj.status_date = today.strftime("%B %d, %Y")
     loan_obj.status = 'approved'
     loan_obj.save()
 
+    # Automatic OUT transaction
+    loanTransaction.objects.create(
+        customer=loan_obj.customer,
+        payment=loan_obj.amount,
+        category='out'
+    )
+
     year = loan_obj.year
     approved_customer = loan_obj.customer
+    interest_rate = 0.12 #
 
     if CustomerLoan.objects.filter(customer=approved_customer).exists():
         existing = CustomerLoan.objects.get(customer=approved_customer)
-        existing.total_loan = int(existing.total_loan) + int(loan_obj.amount)
+        existing.total_loan = F('total_loan') + int(loan_obj.amount)
         existing.payable_loan = (
-            int(existing.payable_loan)
-            + int(loan_obj.amount)
-            + int(loan_obj.amount) * 0.12 * int(year)
+            F('payable_loan') 
+            + int(loan_obj.amount) 
+            + (int(loan_obj.amount) * interest_rate * int(year))
         )
         existing.save()
     else:
         CustomerLoan.objects.create(
             customer=approved_customer,
             total_loan=int(loan_obj.amount),
-            payable_loan=int(loan_obj.amount) + int(loan_obj.amount) * 0.12 * int(year),
+            payable_loan=int(loan_obj.amount) + (int(loan_obj.amount) * interest_rate * int(year)),
         )
 
     loan_obj.refresh_from_db()
     loan_obj.generate_emi_schedule(loan_obj)
-
-
-def approve_loans(modeladmin, request, queryset):
-    count = 0
-    for loan in queryset.filter(status='pending'):
-        _process_loan_approval(loan)
-        count += 1
-    modeladmin.message_user(request, f"{count} loan(s) approved and EMI schedules generated.")
-
-approve_loans.short_description = "Approve selected loan requests"
-
-
-def reject_loans(modeladmin, request, queryset):
-    today = date.today()
-    count = queryset.filter(status='pending').update(
-        status='rejected',
-        status_date=today.strftime("%B %d, %Y"),
-    )
-    modeladmin.message_user(request, f"{count} loan(s) rejected.")
-
-reject_loans.short_description = "Reject selected loan requests"
-
-
-def regenerate_emi_schedule(modeladmin, request, queryset):
-    count = 0
-    for loan in queryset.filter(status='approved'):
-        loan.generate_emi_schedule(loan)
-        count += 1
-    modeladmin.message_user(request, f"EMI schedule regenerated for {count} loan(s).")
-
-regenerate_emi_schedule.short_description = "Regenerate EMI schedule (approved loans only)"
-
 
 # ─────────────────────────────────────────────
 # Loan Request
@@ -208,7 +236,22 @@ class LoanRequestAdmin(admin.ModelAdmin):
         loan.status = 'rejected'
         loan.save()
         self.message_user(request, f"Loan {loan_id} Rejected", level='warning')
-        return redirect('admin:loanApp_loanrequest_changelist')b
+        return redirect('admin:loanApp_loanrequest_changelist')
+    
+    def save_model(self, request, obj, form, change):
+        # 1. Save the LoanRequest first to ensure the database updates successfully
+        super().save_model(request, obj, form, change)
+
+        # 2. Check if the status was just changed to 'approved'
+        if obj.status == 'approved' and 'status' in form.changed_data:
+            from .models import loanTransaction # Local import to avoid circular dependencies
+            
+            # 3. Create the 'OUT' transaction automatically
+            loanTransaction.objects.create(
+                customer=obj.customer,
+                payment=obj.loan_amount,
+                category='out' # Records as Red/Expense in your ledger
+            )
 # ─────────────────────────────────────────────
 # Customer Loan (balance ledger)
 # ─────────────────────────────────────────────
@@ -259,10 +302,11 @@ class CustomerLoanAdmin(admin.ModelAdmin):
 # ─────────────────────────────────────────────
 @admin.register(loanTransaction)
 class LoanTransactionAdmin(admin.ModelAdmin):
+    # Added 'type_badge' and updated payment display
     list_display = (
-        'transaction', 'customer_name', 'payment_display', 'payment_date',
+        'transaction', 'customer_name', 'type_badge', 'payment_display', 'payment_date',
     )
-    list_filter = ('payment_date',)
+    list_filter = ('category', 'payment_date') # Added category filter
     search_fields = (
         'customer__user__username',
         'customer__user__email',
@@ -275,73 +319,88 @@ class LoanTransactionAdmin(admin.ModelAdmin):
     def customer_name(self, obj):
         return obj.customer.user.username
     customer_name.short_description = "Customer"
-    customer_name.admin_order_field = 'customer__user__username'
 
+    # Automated Badge to show if it's Income or Expense
+    def type_badge(self, obj):
+        if obj.category == 'in':
+            return format_html('<span style="color:#155724; background:#d4edda; padding:2px 10px; border-radius:12px; font-weight:600;">INCOME</span>')
+        return format_html('<span style="color:#721c24; background:#f8d7da; padding:2px 10px; border-radius:12px; font-weight:600;">EXPENSE</span>')
+    type_badge.short_description = "Type"
+
+    # Color-coded amount: Green for In, Red for Out
     def payment_display(self, obj):
-        return f"{obj.payment:,} Tk"
-    payment_display.short_description = "Payment"
-    payment_display.admin_order_field = 'payment'
+        color = "#28a745" if obj.category == 'in' else "#dc3545"
+        symbol = "+" if obj.category == 'in' else "-"
+        return format_html('<b style="color:{}; font-size:14px;">{}{} Tk</b>', color, symbol, f"{obj.payment:,}")
+    payment_display.short_description = "Amount"
+
+    # 1. This removes the green "Add loan transaction" button
+    def has_add_permission(self, request):
+        return False
+
+    # 2. This removes the checkboxes and the "0 of 4 selected" bar
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    # Optional: If you want to prevent clicking into a transaction to edit it
+    def has_change_permission(self, request, obj=None):
+        return False
+
 
 
 # ─────────────────────────────────────────────
-# EMI Payment
+# EMI PAYMENT
 # ─────────────────────────────────────────────
 @admin.register(EMIPayment)
 class EMIPaymentAdmin(admin.ModelAdmin):
+    # Removed 'payment_action' to take away Admin control
     list_display = (
         'id', 'loan_link', 'customer_name', 'installment_no',
-        'due_date', 'emi_amount', 'status_badge', 'paid_date',
+        'due_date', 'emi_amount', 'interest_income', 'principal_deduct', 
+        'status_badge', 'paid_date',
     )
+    
     list_filter = ('is_paid', 'due_date')
-    search_fields = (
-        'loan__customer__user__username',
-        'loan__customer__first_name',
-        'loan__customer__last_name',
-    )
+    search_fields = ('loan__customer__user__username', 'loan__customer__first_name', 'loan__customer__last_name')
     ordering = ('loan', 'installment_no')
+
+    # All fields are read-only to ensure the admin cannot manually change payment status
     readonly_fields = (
-        'loan', 'installment_no', 'due_date',
-        'emi_amount', 'principal_component', 'interest_component', 'balance',
+        'loan', 'installment_no', 'due_date', 'emi_amount', 
+        'principal_component', 'interest_component', 'balance', 
+        'is_paid', 'paid_date'
     )
 
-    fieldsets = (
-        ('Loan Reference', {
-            'fields': ('loan', 'installment_no'),
-        }),
-        ('Amounts', {
-            'fields': ('emi_amount', 'principal_component', 'interest_component', 'balance'),
-        }),
-        ('Payment Status', {
-            'fields': ('due_date', 'is_paid', 'paid_date'),
-        }),
-    )
+    def customer_name(self, obj):
+        return obj.loan.customer.user.username
+    customer_name.short_description = "Customer"
 
     def loan_link(self, obj):
         url = reverse('admin:loanApp_loanrequest_change', args=[obj.loan.pk])
         return format_html('<a href="{}">Loan #{}</a>', url, obj.loan.pk)
     loan_link.short_description = "Loan"
 
-    def customer_name(self, obj):
-        return obj.loan.customer.user.username
-    customer_name.short_description = "Customer"
-
     def status_badge(self, obj):
         if obj.is_paid:
-            return format_html(
-                '<span style="padding:3px 10px;border-radius:12px;font-size:12px;'
-                'font-weight:600;color:#155724;background:#d4edda;">Paid</span>'
-            )
-        today = date.today()
-        if obj.due_date < today:
-            return format_html(
-                '<span style="padding:3px 10px;border-radius:12px;font-size:12px;'
-                'font-weight:600;color:#721c24;background:#f8d7da;">Overdue</span>'
-            )
-        return format_html(
-            '<span style="padding:3px 10px;border-radius:12px;font-size:12px;'
-            'font-weight:600;color:#856404;background:#fff3cd;">Pending</span>'
-        )
+            return format_html('<span style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;color:#155724;background:#d4edda;">Paid</span>')
+        if obj.due_date < date.today():
+            return format_html('<span style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;color:#721c24;background:#f8d7da;">Overdue</span>')
+        return format_html('<span style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;color:#856404;background:#fff3cd;">Pending</span>')
     status_badge.short_description = "Status"
+
+    def interest_income(self, obj):
+        return format_html('<span style="color:#155724; font-weight:bold;">{} Tk</span>', obj.interest_component)
+    interest_income.short_description = "Income"
+
+    def principal_deduct(self, obj):
+        return f"{obj.principal_component} Tk"
+    principal_deduct.short_description = "Deduct"
+
+    # Security: Disable manual record creation and selection checkboxes
+    def has_add_permission(self, request): return False
+    def has_delete_permission(self, request, obj=None): return False
+
+    # ... keep your existing loan_link, customer_name, and status_badge methods ...
 # Remove the @admin.register(loanRequest) from the top of the class
 # and put this at the very bottom of the file:
 
