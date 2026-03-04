@@ -1,0 +1,266 @@
+{% extends 'admin/adminbase.html' %}
+{% load static %}
+
+{% block css_block %}
+<style>
+    :root {
+        --ink: #0f0f14;
+        --surface: #f5f4f0;
+        --accent: #1a1aff;
+        --border: #e2e0d8;
+        --muted: #8a8882;
+        --success: #1e8e3e;
+        --danger: #d93025;
+        --info: #1a73e8;
+    }
+
+    body { background: var(--surface) !important; font-family: 'Inter', sans-serif; }
+    .cl-page { padding: 2rem; }
+    
+    .cl-header { 
+        border-bottom: 2px solid var(--ink); 
+        margin-bottom: 2rem; 
+        padding-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+
+    .cl-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .cl-stat {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        padding: 1.2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .cl-stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
+    .cl-stat-val { font-size: 1.8rem; font-weight: 800; color: var(--ink); }
+
+    .cl-search { width: 100%; margin-bottom: 1.5rem; position: relative; }
+    .cl-search input {
+        width: 100%;
+        padding: 1rem 1rem 1rem 3rem;
+        border: 1.5px solid var(--border);
+        border-radius: 10px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .cl-search i { position: absolute; left: 1.2rem; top: 1.2rem; color: var(--muted); }
+
+    .cl-card {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        transition: border-color 0.2s;
+    }
+    
+    .cl-card-header {
+        display: flex;
+        align-items: center;
+        padding: 1.2rem;
+        cursor: pointer;
+        gap: 1.5rem;
+    }
+    .cl-avatar { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); }
+    
+    .cl-info { flex: 1; }
+    .cl-info b { display: block; font-size: 1.1rem; color: var(--ink); }
+    .cl-info span { font-size: 0.85rem; color: var(--muted); }
+
+    .cl-metrics { display: flex; gap: 2rem; text-align: right; align-items: center; }
+    .cl-metric-item small { display: block; color: var(--muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+    .cl-metric-item b { font-size: 1.1rem; }
+    
+    /* Category Badge in Header */
+    .cat-badge {
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        background: #f0f4ff;
+        color: var(--info);
+        border: 1px solid #d1e3ff;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+
+    .cl-panel {
+        display: none;
+        padding: 1.5rem;
+        background: #fafaf9;
+        border-top: 1px solid var(--border);
+    }
+    .cl-card.open .cl-panel { display: block; }
+    .cl-card.open { border-color: var(--ink); }
+
+    .cl-assessment {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        background: #fff;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+    }
+    .assessment-item small { color: var(--muted); font-size: 0.7rem; display: block; }
+    .assessment-item span { font-weight: 600; font-size: 0.9rem; }
+    
+    .btn-action {
+        padding: 6px 14px;
+        border: 1.5px solid var(--accent);
+        color: var(--accent);
+        border-radius: 6px;
+        text-decoration: none !important;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .btn-action:hover { background: var(--accent); color: #fff; }
+    .btn-doc { border-color: var(--ink); color: var(--ink); }
+    .btn-doc:hover { background: var(--ink); color: #fff; }
+
+    .text-danger-custom { color: var(--danger); }
+    .text-success-custom { color: var(--success); }
+</style>
+{% endblock %}
+
+{% block body_block %}
+<div class="cl-page">
+    <div class="cl-header">
+        <div>
+            <h2>Lender's Portfolio Overview</h2>
+            <p class="text-muted mb-0">Managing disbursed capital and balance receivables.</p>
+        </div>
+    </div>
+
+    <div class="cl-stats">
+        <div class="cl-stat">
+            <div class="cl-stat-label">Total Debtors</div>
+            <div class="cl-stat-val">{{ total_customers }}</div>
+        </div>
+        <div class="cl-stat">
+            <div class="cl-stat-label">Total Balance Receivable</div>
+            <div class="cl-stat-val text-danger-custom">{{ total_outstanding|floatformat:0 }} Tk</div>
+        </div>
+    </div>
+
+    <div class="cl-search">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Search by name, email, or username...">
+    </div>
+
+    <div id="customerList">
+        {% for entry in customer_data %}
+        <div class="cl-card" data-name="{{ entry.customer.user.username|lower }} {{ entry.customer.first_name|lower }}">
+            <div class="cl-card-header" onclick="this.parentElement.classList.toggle('open')">
+                <img src="/media/{{ entry.customer.profile_picture }}" class="cl-avatar" onerror="this.src='https://ui-avatars.com/api/?name={{entry.customer.first_name}}&background=random'">
+                
+                <div class="cl-info">
+                    <b>{{ entry.customer.first_name }} {{ entry.customer.last_name }}</b>
+                    <span>@{{ entry.customer.user.username }}</span>
+                </div>
+
+                <div class="cl-metrics">
+                    <div class="cl-metric-item">
+                        <small>Loan Type</small>
+                        <span class="cat-badge">{{ entry.customer_loan.loan_category|default:"N/A" }}</span>
+                    </div>
+                    <div class="cl-metric-item">
+                        <small>Principal Disbursed</small>
+                        <b>{{ entry.customer_loan.total_loan|floatformat:0 }} Tk</b>
+                    </div>
+                    <div class="cl-metric-item">
+                        <small>Balance Receivable</small>
+                        <b class="{% if entry.outstanding > 0 %}text-danger-custom{% else %}text-success-custom{% endif %}">
+                            {{ entry.outstanding|floatformat:0 }} Tk
+                        </b>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-down text-muted ml-3"></i>
+            </div>
+
+            <div class="cl-panel">
+                <p><strong><i class="fas fa-file-invoice-dollar mr-2"></i>Financial Assessment</strong></p>
+                <div class="cl-assessment">
+                    <div class="assessment-item">
+                        <small>Income Source</small>
+                        <span>{{ entry.customer_loan.income_source|default:"Not Provided" }}</span>
+                    </div>
+                    <div class="assessment-item">
+                        <small>Monthly Income</small>
+                        <span>{{ entry.customer_loan.income_amount|default:"0"|floatformat:0 }} Tk</span>
+                    </div>
+                    <div class="assessment-item">
+                        <small>Bank Account</small>
+                        <span>{{ entry.customer_loan.account_number|default:"N/A" }}</span>
+                    </div>
+                    <div class="assessment-item">
+                        <small>Account Type</small>
+                        <span>{{ entry.customer_loan.account_type|default:"Personal"|upper }}</span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0">Collection Ledger</h6>
+                    <span class="badge badge-info">Total Contract: {{ entry.customer_loan.payable_loan|floatformat:0 }} Tk</span>
+                </div>
+                
+                <table class="table table-sm table-hover">
+                    <thead class="thead-light">
+                        <tr style="font-size: 0.7rem;">
+                            <th>LOAN ID</th>
+                            <th>LOAN CATEGORY</th> <th>TOTAL CONTRACT</th>
+                            <th>STATUS</th>
+                            <th>ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loan in entry.loans %}
+                        <tr>
+                            <td>#{{ loan.id }}</td>
+                            <td><b class="text-info">{{ loan.category }}</b></td>
+                            <td>{{ loan.amount|floatformat:0 }} Tk</td>
+                            <td><span class="badge badge-pill badge-success">{{ loan.status }}</span></td>
+                            <td>
+                                <a href="/admin/loanApp/loanrequest/{{ loan.id }}/change/" class="btn-action" style="padding: 2px 8px; font-size: 0.7rem;">Inspect</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="/admin/loanApp/customerloan/{{ entry.customer_loan.id }}/change/" class="btn-action btn-doc">
+                        <i class="fas fa-file-alt"></i> Open Full Application Document
+                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="/admin/loginapp/customersignup/{{ entry.customer.id }}/change/" class="btn-action">Edit Profile</a>
+                        <a href="{% url 'managerApp:user_remove' entry.customer.user.id %}" class="btn-action border-danger text-danger">Terminate</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        let q = e.target.value.toLowerCase();
+        document.querySelectorAll('.cl-card').forEach(card => {
+            let searchableText = card.getAttribute('data-name');
+            card.style.display = searchableText.includes(q) ? 'block' : 'none';
+        });
+    });
+</script>
+{% endblock %}

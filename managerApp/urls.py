@@ -14,4 +14,7 @@ urlpatterns = [
     # (e.g. any bookmarked direct links) — but the primary flow is Django admin actions.
     path('approved-request/<int:id>/', views.approved_request, name='approved_request'),
     path('rejected-request/<int:id>/', views.rejected_request, name='rejected_request'),
+
+    # ── Customer Loans Dashboard ──
+    path('customer-loans/', views.customer_loans, name='customer_loans'),
 ]

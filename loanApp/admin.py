@@ -255,48 +255,121 @@ class LoanRequestAdmin(admin.ModelAdmin):
 # ─────────────────────────────────────────────
 # Customer Loan (balance ledger)
 # ─────────────────────────────────────────────
+from django.contrib import admin
+from django.utils.html import format_html
+from django.db.models import Sum
+from .models import CustomerLoan, EMIPayment
+
 @admin.register(CustomerLoan)
 class CustomerLoanAdmin(admin.ModelAdmin):
+    # Professional Admin/Lender Headers
     list_display = (
-        'id', 'customer_name', 'total_loan_display',
-        'payable_loan_display', 'outstanding_display',
+        'id', 
+        'customer_name', 
+        'loan_category', # This now refers to the method defined below
+        'principal_disbursed_box', 
+        'total_receivable_box', 
+        'balance_receivable_box',
+        'view_document_button'
     )
+    
+    list_display_links = None 
+    
     search_fields = (
         'customer__user__username',
         'customer__user__email',
         'customer__first_name',
         'customer__last_name',
     )
-    ordering = ('-total_loan',)
-    readonly_fields = ('customer',)
+
+    # --- DOCUMENT VIEW CONFIGURATION ---
+    
+    fieldsets = (
+        ('Customer & Account Information', {
+            'fields': ('customer', 'account_number', 'account_type') 
+        }),
+        ('Loan Application Details', {
+            # Note: In fieldsets, we must use the REAL field name from models.py
+            # If your model field is 'category', change 'loan_category' to 'category' here.
+            'fields': ('applied_date', 'total_loan', 'payable_loan')
+        }),
+        ('Financial Assessment (Income)', {
+            'fields': ('income_source', 'income_amount')
+        }),
+    )
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            # We add 'loan_category' and 'customer_name' to ensure they stay read-only
+            return [f.name for f in obj._meta.fields] + ['customer_name', 'loan_category']
+        return self.readonly_fields
+
+    # This method fixes the E108 Error
+    def loan_category(self, obj):
+        # This looks for a field named 'category'. Change it if your model uses 'loan_type' etc.
+        return getattr(obj, 'category', "General")
+    loan_category.short_description = "Category"
+
+    def view_document_button(self, obj):
+        return format_html(
+            '<a class="button" href="/admin/loanApp/customerloan/{}/change/" '
+            'style="background:#444; color:white; padding:4px 12px; border-radius:5px; '
+            'text-decoration:none; font-weight:bold;">📄 Open Application File</a>', 
+            obj.id
+        )
+    view_document_button.short_description = "Application File"
+
+    # --- PERMISSIONS & BOXES ---
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def principal_disbursed_box(self, obj):
+        val_text = f"{obj.total_loan:,.0f} Tk"
+        return format_html(
+            '<div style="background:#f8f9fa; border:1px solid #dee2e6; padding:4px 10px; border-radius:5px; '
+            'text-align:center; min-width:110px; display:inline-block; color:#212529; font-weight:bold;">'
+            '{}</div>', val_text
+        )
+    principal_disbursed_box.short_description = "Principal Disbursed"
+
+    def total_receivable_box(self, obj):
+        val_text = f"{obj.payable_loan:,.0f} Tk"
+        return format_html(
+            '<div style="background:#e8f0fe; border:1px solid #b3d7ff; padding:4px 10px; border-radius:5px; '
+            'text-align:center; min-width:110px; display:inline-block; color:#1a73e8; font-weight:bold;">'
+            '{}</div>', val_text
+        )
+    total_receivable_box.short_description = "Total Receivable"
+
+    def balance_receivable_box(self, obj):
+        paid_sum = EMIPayment.objects.filter(
+            loan__customer=obj.customer, 
+            is_paid=True
+        ).aggregate(Sum('emi_amount'))['emi_amount__sum'] or 0
+        balance = float(obj.payable_loan) - float(paid_sum)
+        color = "#d93025" if balance > 0 else "#1e8e3e"
+        bg = "#fce8e6" if balance > 0 else "#e6f4ea"
+        value_text = f"{balance:,.0f} Tk"
+        return format_html(
+            '<div style="background:{}; border:1px solid {}; padding:4px 10px; border-radius:5px; '
+            'text-align:center; min-width:110px; display:inline-block; color:{}; font-weight:bold;">'
+            '{}</div>', bg, color, color, value_text
+        )
+    balance_receivable_box.short_description = 'Balance Receivable'
 
     def customer_name(self, obj):
         return obj.customer.user.username
     customer_name.short_description = "Customer"
-    customer_name.admin_order_field = 'customer__user__username'
-
-    def total_loan_display(self, obj):
-        return f"{obj.total_loan:,} Tk"
-    total_loan_display.short_description = "Total Loan"
-    total_loan_display.admin_order_field = 'total_loan'
-
-    def payable_loan_display(self, obj):
-        return f"{obj.payable_loan:,} Tk"
-    payable_loan_display.short_description = "Payable (with interest)"
-    payable_loan_display.admin_order_field = 'payable_loan'
-
-    def outstanding_display(self, obj):
-        paid = loanTransaction.objects.filter(
-            customer=obj.customer
-        ).aggregate(total=Sum('payment'))['total'] or 0
-        outstanding = obj.payable_loan - paid
-        colour = '#dc3545' if outstanding > 0 else '#28a745'
-        return format_html(
-            '<span style="color:{};">{:,} Tk</span>', colour, outstanding
-        )
-    outstanding_display.short_description = "Outstanding"
-
-
 # ─────────────────────────────────────────────
 # Loan Transaction (payments made by customers)
 # ─────────────────────────────────────────────
