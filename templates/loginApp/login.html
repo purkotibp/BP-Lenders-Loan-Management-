@@ -2,101 +2,79 @@
 {% load widget_tweaks %}
 {% load static %}
 
-{% block title_block %}
-User Login
+{% block css_block %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
 {% endblock %}
 
-
 {% block body_block %}
-
-{% include 'navbar.html' %}
-<div class="container my-5">
-
-    <div class="row">
-        <div class="p-5 m-auto rounded shadow-lg col-md-4 bg-body">
-            <h3 class="text-center text-success">{{user}} </h3>
-            <form method="POST" class="my-5">
-                {% if error %}
-                <div class="my-2">
-                    <div class="row">
-                        <div class="m-auto col">
-                            <div class="text-center alert alert-danger" role="alert">
-                                {{error}}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-
-                {% csrf_token %}
-
-
-
-                <div class="mb-4 form-outline">
-
-                    {% render_field form.username|attr:'required:true' class="form-control" %}
-                    <label class="form-label">Username</label>
-                </div>
-
-                <!-- Password input -->
-                <div class="mb-4 form-outline">
-
-                    {% render_field form.password|attr:'required:true' class="form-control" %}
-                    <label class="form-label">Password</label>
-                </div>
-
-                <!-- 2 column grid layout for inline styling -->
-                <div class="mb-4 row ">
-                    <div class="col">
-                        <!-- Checkbox -->
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="" checked />
-                            <label class="form-check-label"> Remember me </label>
-                        </div>
-                    </div>
-
-                    <div class="col">
-                        <!-- Simple link -->
-                        <a href="#!">Forgot password?</a>
-                    </div>
-                </div>
-
-                <!-- Submit button -->
-                <button type="submit" class="mb-4 btn btn-primary btn-block">Sign in</button>
-
-                <!-- Register buttons -->
-                <div class="text-center">
-                    <p>Not a member? <a href="/account/signup-customer">Register</a></p>
-                    <p>or sign up with:</p>
-                    <button type="button" class="mx-1 btn btn-primary btn-floating">
-                        <i class="fab fa-facebook-f"></i>
-                    </button>
-
-                    <button type="button" class="mx-1 btn btn-primary btn-floating">
-                        <i class="fab fa-google"></i>
-                    </button>
-
-                    <button type="button" class="mx-1 btn btn-primary btn-floating">
-                        <i class="fab fa-twitter"></i>
-                    </button>
-
-                    <button type="button" class="mx-1 btn btn-primary btn-floating">
-                        <i class="fab fa-github"></i>
-                    </button>
-                </div>
-
-
-
-            </form>
+<div class="auth-container">
+    <div class="auth-sidebar">
+        <div class="auth-logo-box">
+            <i class="fas fa-wallet fs-3"></i>
         </div>
+        <h2>BP Lenders</h2>
+        <p class="subtitle">Loan Management Portal</p>
+        <hr class="my-4 opacity-25">
+        <ul class="list-unstyled small opacity-75">
+            <li class="mb-2"><i class="fas fa-check-circle text-warning me-2"></i> Bank-Grade Security</li>
+            <li class="mb-2"><i class="fas fa-check-circle text-warning me-2"></i> 24/7 Expert Support</li>
+            <li><i class="fas fa-check-circle text-warning me-2"></i> Quick Approvals</li>
+        </ul>
     </div>
 
+    <div class="auth-form-side">
+        <h3>Welcome Back</h3>
+        <p class="desc">Sign in to access your account</p>
 
+        <form method="POST">
+            {% csrf_token %}
+            {% if error %}
+            <div class="alert alert-danger small py-2">{{ error }}</div>
+            {% endif %}
 
+            <div class="mb-3">
+                <label class="small fw-bold text-muted">Username</label>
+                {% render_field form.username class="form-control form-control-custom" placeholder="your_username" %}
+            </div>
 
+            <div class="mb-4">
+                <label class="small fw-bold text-muted d-block mb-1">Password</label>
+                <div class="password-wrapper">
+                    {% render_field form.password class="form-control-custom" id="login_pass" placeholder="••••••••" %}
 
+                    <i class="fas fa-eye password-toggle" id="login_eye"
+                        onclick="togglePass('login_pass', 'login_eye')"></i>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-auth-main shadow-sm mb-4">Sign In</button>
+
+            <p class="text-center small text-muted">
+                Don't have an account? <a href="/account/signup-customer"
+                    class="text-primary fw-bold text-decoration-none">Open an account</a>
+            </p>
+        </form>
+    </div>
 </div>
+<script>
+    function togglePass(inputId, iconId) {
+        const inputField = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
 
-{% include "footer.html" %}
-
+        if (inputField && icon) {
+            if (inputField.type === "password") {
+                inputField.type = "text";
+                // Swaps the eye icon for the slashed eye icon
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            } else {
+                inputField.type = "password";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            }
+        } else {
+            console.error("Could not find element with ID:", inputId, "or", iconId);
+        }
+    }
+</script>
 {% endblock %}

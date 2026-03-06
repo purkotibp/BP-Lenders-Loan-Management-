@@ -1,0 +1,74 @@
+/* static/css/home.css */
+:root {
+    --primary-dark: #060b26; /* Deeper navy from the screenshot */
+    --accent-orange: #f89500;
+    --text-light: #ffffff;
+    --glass-card: rgba(255, 255, 255, 0.05);
+}
+
+body {
+    background: radial-gradient(circle at 80% 20%, #1a2b6d 0%, #060b26 100%) !important;
+    color: white !important;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+}
+
+/* Force Navbar White */
+.navbar-custom .nav-link, 
+.navbar-custom .brand-main, 
+.navbar-custom .brand-sub {
+    color: #ffffff !important;
+}
+
+/* Hero Title Scaling */
+.hero-title {
+    font-size: 4.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+}
+.hero-title span { color: var(--accent-orange); }
+
+/* The Glass Calculator Card */
+.glass-calculator {
+    background: var(--glass-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    padding: 3rem;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+}
+
+.calc-input-row {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.calc-input-row label {
+    display: block;
+    font-size: 0.75rem;
+    color: #b0b8c1;
+    text-transform: uppercase;
+}
+
+.calc-input-row .val {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+/* Orange Buttons */
+.btn-main-orange {
+    background: var(--accent-orange);
+    color: white !important;
+    padding: 1rem 2.5rem;
+    border-radius: 12px;
+    font-weight: 700;
+    border: none;
+    box-shadow: 0 10px 20px rgba(248, 149, 0, 0.3);
+}

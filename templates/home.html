@@ -2,45 +2,75 @@
 {% load static %}
 
 {% block css_block %}
-
-
-<style>
-    .row {
-        height: 80vh;
-
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
 {% endblock %}
 
 {% block body_block %}
-
 {% include 'navbar.html' %}
 
-<div class="container">
-    <div class="row">
-        <div class="col-md-6 m-auto">
-            <img src="{% static 'images/loan.jpg' %}" class="img-fluid mx-auto" alt="Background Image" srcset="">
-
-        </div>
-        <div class="col-md-6 m-auto">
-            <div class="d-flex justify-content-center align-items-center">
-                <a href="/loan/loan-request/">
-                    <button type="button" class="btn btn-info btn-rounded m-2">Apply Loan</button>
-                </a>
-
-                or
-                <a href="/account/signup-customer/">
-
-                    <button type="button" class="btn btn-info btn-rounded ms-2">Register</button>
-                </a>
-
+<div class="container" style="padding-top: 120px; padding-bottom: 100px;">
+    <div class="row align-items-center">
+        
+        <div class="col-lg-6">
+            <div class="badge rounded-pill bg-dark border border-warning mb-4 p-2 px-3 text-warning">
+                <i class="fas fa-medal me-2"></i> Trusted by 50,000+ customers
+            </div>
+            
+            <h1 class="hero-title">
+                Your Financial Goals, <br>
+                <span>Our Priority</span>
+            </h1>
+            
+            <p class="fs-5 text-muted mb-5">
+                Get the funds you need with competitive rates, fast approval, and flexible terms. 
+                Start your loan application today.
+            </p>
+            
+            <div class="d-flex gap-3 mb-5">
+                <a href="/loan/loan-request/" class="btn btn-main-orange">Apply Now <i class="fas fa-arrow-right ms-2"></i></a>
+                <a href="/account/signup-customer/" class="btn btn-outline-light p-3 px-4 rounded-3">Register</a>
             </div>
 
+            <div class="d-flex gap-4 text-white-50">
+                <span><i class="fas fa-check-circle text-success me-2"></i> No credit check</span>
+                <span><i class="fas fa-check-circle text-success me-2"></i> 5-minute application</span>
+            </div>
+        </div>
+
+        <div class="col-lg-5 offset-lg-1">
+            <div class="glass-calculator">
+                <div class="calc-input-row">
+                    <div>
+                        <label>Loan Amount</label>
+                        <div class="val">$25,000</div>
+                    </div>
+                    <i class="fas fa-dollar-sign text-warning fs-3"></i>
+                </div>
+                
+                <div class="calc-input-row">
+                    <div>
+                        <label>Interest Rate</label>
+                        <div class="val">3.5% APR</div>
+                    </div>
+                    <i class="fas fa-chart-line text-success fs-3"></i>
+                </div>
+
+                <div class="calc-input-row">
+                    <div>
+                        <label>Monthly Payment</label>
+                        <div class="val">$450</div>
+                    </div>
+                    <i class="fas fa-calendar-alt text-danger fs-3"></i>
+                </div>
+
+                <button class="btn btn-main-orange w-100 py-3 mt-3 fs-5">Calculate Your Loan</button>
+            </div>
         </div>
     </div>
 </div>
 
-
-
-{% include "footer.html" %}
+<div class="bg-white py-5">
+    <div class="container">
+        </div>
+</div>
 {% endblock %}

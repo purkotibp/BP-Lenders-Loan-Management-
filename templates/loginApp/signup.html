@@ -1,125 +1,80 @@
 {% extends 'base.html' %}
 {% load widget_tweaks %}
-{%load static%}
-
-{% block title_block %}
-User Sign Up
-{% endblock %}
+{% load static %}
 
 {% block css_block %}
-
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
 {% endblock %}
 
-
-
-
 {% block body_block %}
-
-{% include 'navbar.html' %}
-<div class="container my-5">
-
-    <div class="row">
-        <div class="p-5 m-auto rounded shadow-lg col-md-5 bg-body">
-            <h3 class="text-center text-success">{{user}}</h3>
-            <form method="POST" class="my-5">
-                {% if error %}
-                <div class="my-2">
-                    <div class="row">
-                        <div class="m-auto col">
-                            <div class="text-center alert alert-danger" role="alert">
-                                {{error}}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-
-                {% csrf_token %}
-
-
-
-                <div class="mb-4 form-outline">
-
-                    {% render_field form.username|attr:'required:true' class="form-control" %}
-                    <label class="form-label">Username</label>
-                </div>
-
-
-                <!-- Email address input -->
-
-                <div class="mb-4 form-outline">
-
-                    {% render_field form.email|attr:'required:true' class="form-control" %}
-                    <label class="form-label">Email address</label>
-                </div>
-
-                <!-- Password input -->
-                <div class="mb-4 form-outline">
-
-                    {% render_field form.password1|attr:'required:true' class="form-control" %}
-                    <label class="form-label">Password</label>
-                </div>
-                <!-- Repeat Password input -->
-                <div class="mb-4 form-outline">
-
-                    {% render_field form.password2|attr:'required:true' class="form-control" %}
-                    <label class="form-label">Repeat Password</label>
-                </div>
-
-
-                <!-- 2 column grid layout for inline styling -->
-                <div class="mb-4 row ">
-                    <div class="col">
-                        <!-- Checkbox -->
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="" checked />
-                            <label class="form-check-label"> Remember me </label>
-                        </div>
-                    </div>
-
-                    <div class="col">
-                        <!-- Simple link -->
-                        <a href="#!">Forgot password?</a>
-                    </div>
-                </div>
-
-                <!-- Submit button -->
-                <button type="submit" class="mb-4 btn btn-primary btn-block">Sign up</button>
-
-                <!-- Register buttons -->
-                <div class="text-center">
-                    <p>Are you already a member? <a href="/account/login-customer">Sign in</a></p>
-                    <p>or sign up with:</p>
-                    <button type="button" class="mx-1 btn btn-primary btn-floating">
-                        <i class="fab fa-facebook-f"></i>
-                    </button>
-
-                    <button type="button" class="mx-1 btn btn-primary btn-floating">
-                        <i class="fab fa-google"></i>
-                    </button>
-
-                    <button type="button" class="mx-1 btn btn-primary btn-floating">
-                        <i class="fab fa-twitter"></i>
-                    </button>
-
-                    <button type="button" class="mx-1 btn btn-primary btn-floating">
-                        <i class="fab fa-github"></i>
-                    </button>
-                </div>
-
-
-
-            </form>
+<div class="auth-container">
+    <div class="auth-sidebar">
+        <div class="auth-logo-box">
+            <i class="fas fa-user-plus fs-3 text-white"></i>
         </div>
+        <h2 class="fw-bold">BP Lenders</h2>
+        <p class="opacity-75">Start your financial journey</p>
+        <hr class="my-4 opacity-25">
+        <p class="small opacity-75">Join thousands of users who trust us for fast, secure, and transparent loan management services.</p>
     </div>
 
+    <div class="auth-form-side">
+        <h3 class="fw-bold mb-1">Create Account</h3>
+        <p class="text-muted mb-4">Fill in the details to get started</p>
 
+        <form method="POST">
+            {% csrf_token %}
+            {% if error %}
+                <div class="alert alert-danger small py-2">{{ error }}</div>
+            {% endif %}
 
+            <div class="mb-3">
+                <label class="small fw-bold text-muted d-block mb-1">Username</label>
+                {% render_field form.username class="form-control-custom" placeholder="Choose a username" %}
+            </div>
 
+            <div class="mb-3">
+                <label class="small fw-bold text-muted d-block mb-1">Email Address</label>
+                {% render_field form.email class="form-control-custom" placeholder="name@example.com" %}
+            </div>
 
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="small fw-bold text-muted d-block mb-1">Password</label>
+                    <div class="password-wrapper">
+                        {% render_field form.password1 class="form-control-custom" id="pass1" placeholder="••••••••" %}
+                        <i class="fas fa-eye password-toggle" id="eye1" onclick="togglePass('pass1', 'eye1')"></i>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="small fw-bold text-muted d-block mb-1">Repeat Password</label>
+                    <div class="password-wrapper">
+                        {% render_field form.password2 class="form-control-custom" id="pass2" placeholder="••••••••" %}
+                        <i class="fas fa-eye password-toggle" id="eye2" onclick="togglePass('pass2', 'eye2')"></i>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-auth-main mt-2 mb-4">Sign Up</button>
+            
+            <p class="text-center small text-muted">
+                Already a member? <a href="/account/login-customer" class="text-primary fw-bold text-decoration-none">Sign In</a>
+            </p>
+        </form>
+    </div>
 </div>
 
-
-{% include "footer.html" %}
-
+<script>
+function togglePass(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.replace("fa-eye", "fa-eye-slash");
+    } else {
+        input.type = "password";
+        icon.classList.replace("fa-eye-slash", "fa-eye");
+    }
+}
+</script>
 {% endblock %}
