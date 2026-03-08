@@ -137,9 +137,17 @@ STATICFILES_DIRS = [STATIC_DIR]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-# login url
 
-LOGIN_URL = '/account/login/'
+
+
+# This is where Django sends users who are NOT logged in
+LOGIN_URL = 'login_App:login_customer' 
+
+# This is where Django sends users immediately AFTER they log in
+LOGIN_REDIRECT_URL = 'loanApp:user_dashboard'
+
+
+
 
 django_heroku.settings(locals())
 

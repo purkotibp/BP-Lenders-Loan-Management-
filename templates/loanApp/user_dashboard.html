@@ -1,137 +1,177 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load mathfilters %}
+
 {% block css_block %}
 <style>
-    #second-part {
-        margin: auto;
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.05);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --accent-orange: #f59e0b;
     }
 
-
-    .status {
-        border-radius: 10px;
+    body {
+        background: #0f172a !important; /* Matches your premium theme */
         color: white;
-        margin: 10px 20px;
-        padding: 20px;
     }
 
-    .deposit {
-
-        background-color: slateblue;
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 24px;
+        transition: transform 0.3s ease;
+        height: 100%;
     }
 
-    .withdraw {
-
-        background-color: lightsalmon;
-
+    .glass-card:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.08);
     }
 
-    .balance {
-
-        background-color: rgb(231, 198, 6);
+    .stat-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
     }
+
+    /* Status Colors */
+    .bg-request { background: rgba(78, 164, 240, 0.2); color: #4ea4f0; }
+    .bg-approved { background: rgba(166, 76, 240, 0.2); color: #a64cf0; }
+    .bg-rejected { background: rgba(239, 83, 80, 0.2); color: #ef5350; }
+    .bg-payable { background: rgba(144, 237, 125, 0.2); color: #90ed7d; }
+    .bg-due { background: rgba(66, 165, 245, 0.2); color: #42a5f5; }
 
     #digit {
-        font-size: 60px;
-        font-weight: bold;
-        text-align: end;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 1.8rem;
     }
 
-    .common-section {
-        padding: 30px;
-        margin: 50px 20px;
-        box-shadow: 0 0 10px;
-        border-radius: 10px;
+    .section-title {
+        border-left: 4px solid var(--accent-orange);
+        padding-left: 15px;
+        margin-bottom: 30px;
     }
 </style>
+<script src="https://unpkg.com/lucide@latest"></script>
 {% endblock %}
-
 
 {% block body_block %}
 {% include 'navbar.html' %}
-<div class="container p-5 my-5">
-    <div class="p-5 m-4 text-center alert alert-primary" role="alert">
-        <h1>User Dashboard</h1>
+
+<div class="container py-5">
+    <div class="section-title">
+        <h1 class="fw-bold text-white mb-1">Customer Dashboard</h1>
+        <p class="text-muted">Welcome back, {{ user.username }}. Here is your financial summary.</p>
     </div>
-    <div id="second-part">
-        <div class="row">
 
-
-            <div class="col-md-4 ">
-                <div class="status" style="background-color:#4ea4f0">
-                    <h3>Loan Request</h3>
-                    <h1><span id="digit">{{request}}</span></h1>
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="glass-card">
+                <div class="stat-icon bg-request">
+                    <i data-lucide="file-text"></i>
                 </div>
-
+                <h6 class="text-muted text-uppercase small fw-bold">Loan Requests</h6>
+                <h2 id="digit" class="text-white">{{ request }}</h2>
             </div>
-            <div class="col-md-4 ">
-                <div class="status" style="background-color:#a64cf0">
-                    <h3>Loan Approved</h3>
-                    <h1><span id="digit">{{approved}}</span></h1>
+        </div>
+        <div class="col-md-4">
+            <div class="glass-card">
+                <div class="stat-icon bg-approved">
+                    <i data-lucide="check-circle"></i>
                 </div>
-
+                <h6 class="text-muted text-uppercase small fw-bold">Approved Applications</h6>
+                <h2 id="digit" class="text-white">{{ approved }}</h2>
             </div>
-            <div class="col-md-4 ">
-                <div class="status" style="background-color:#4c4ff0">
-                    <h3>Loan Rejected</h3>
-                    <h1><span id="digit">{{rejected}}</span></h1>
+        </div>
+        <div class="col-md-4">
+            <div class="glass-card">
+                <div class="stat-icon bg-rejected">
+                    <i data-lucide="x-circle"></i>
                 </div>
-
+                <h6 class="text-muted text-uppercase small fw-bold">Rejected Loans</h6>
+                <h2 id="digit" class="text-white">{{ rejected }}</h2>
             </div>
-            <div class="col-md-4 ">
-                <div class="status" style="background-color:#90ED7D">
-                    <h3>Payable Loan</h3>
+        </div>
+    </div>
 
-                    {% if totalPayable %}
-                    <h1><span id="digit">Rs{{ totalPayable|sub:0 }}</span></h1>
-                    {% else %}
-                    <h1><span id="digit">Rs0</span></h1>
-                    {% endif %}
+    <h4 class="text-white mb-4">Financial Overview</h4>
+    <div class="row g-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="glass-card">
+                <div class="stat-icon bg-payable">
+                    <i data-lucide="arrow-up-right"></i>
                 </div>
-
-            </div>
-            <div class="col-md-4 ">
-                <div class="status" style="background-color:#FF7599">
-                    <h3>Approved Loan</h3>
-
-                    {% if totalLoan %}
-                    <h1><span id="digit">Rs{{totalLoan|sub:0}}</span></h1>
-                    {% else %}
-                    <h1><span id="digit">Rs0</span></h1>
-                    {% endif %}
-                </div>
-
-            </div>
-            <div class="col-md-4 ">
-                <div class="status" style="background-color:#EF5350">
-                    <h3>Total Paid Loan</h3>
-
-                    {% if totalPaid %}
-                    <h1><span id="digit">Rs{{totalPaid|sub:0}}</span></h1>
-                    {% else %}
-                    <h1><span id="digit">Rs0</span></h1>
-                    {% endif %}
-                </div>
-
-            </div>
-
-            <div class="col-md-4 ">
-                <div class="status" style="background-color:#42A5F5">
-                    <h3>Total Due Loan</h3>
-
-                    {% if totalPayable or totalPaid %}
-                    <h1><span id="digit">Rs{{ totalPayable|sub:totalPaid }}</span></h1>
-                    {% else %}
-                    <h1><span id="digit">Rs0</span></h1>
-                    {% endif %}
-                </div>
-
+                <h6 class="text-muted text-uppercase small fw-bold">Total Payable</h6>
+                <h2 id="digit">
+                    {% if totalPayable %} Rs. {{ totalPayable|sub:0 }} {% else %} Rs. 0 {% endif %}
+                </h2>
             </div>
         </div>
 
+        <div class="col-md-6 col-lg-3">
+            <div class="glass-card">
+                <div class="stat-icon" style="background: rgba(255, 117, 153, 0.2); color: #FF7599;">
+                    <i data-lucide="landmark"></i>
+                </div>
+                <h6 class="text-muted text-uppercase small fw-bold">Approved Loan</h6>
+                <h2 id="digit">
+                    {% if totalLoan %} Rs. {{ totalLoan|sub:0 }} {% else %} Rs. 0 {% endif %}
+                </h2>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="glass-card">
+                <div class="stat-icon bg-rejected">
+                    <i data-lucide="wallet"></i>
+                </div>
+                <h6 class="text-muted text-uppercase small fw-bold">Total Paid</h6>
+                <h2 id="digit">
+                    {% if totalPaid %} Rs. {{ totalPaid|sub:0 }} {% else %} Rs. 0 {% endif %}
+                </h2>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="glass-card">
+                <div class="stat-icon bg-due">
+                    <i data-lucide="alert-circle"></i>
+                </div>
+                <h6 class="text-muted text-uppercase small fw-bold">Total Due</h6>
+                <h2 id="digit" style="color: #42a5f5;">
+                    {% if totalPayable or totalPaid %}
+                        Rs. {{ totalPayable|sub:totalPaid }}
+                    {% else %}
+                        Rs. 0
+                    {% endif %}
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="glass-card p-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="text-white mb-0">Need more funds?</h5>
+                    <p class="text-muted small mb-0">Apply for a new loan or top up your current one.</p>
+                </div>
+                <a href="#" class="btn btn-warning fw-bold px-4" style="background: var(--accent-orange); border: none;">Apply Now</a>
+            </div>
+        </div>
     </div>
 </div>
 
 {% include 'footer.html' %}
 
+<script>
+    lucide.createIcons();
+</script>
 {% endblock %}

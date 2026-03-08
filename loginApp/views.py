@@ -51,9 +51,6 @@ def login_view(request):
     form = CustomerLoginForm()
     if request.method == 'POST':
         form = CustomerLoginForm(data=request.POST)
-        # username = request.POST['username']
-        # password = request.POST['password']
-        # print(username, password)
         if form.is_valid():
             username = form.cleaned_data['username']
             password = form.cleaned_data['password']
@@ -61,12 +58,24 @@ def login_view(request):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
-                return HttpResponseRedirect(reverse('home'))
+                # CHANGE THIS LINE:
+                return redirect('loanApp:user_dashboard') 
+            else:
+                # Handle the case where user is None (wrong credentials)
+                return render(request, 'loginApp/login.html', {
+                    'form': form, 
+                    'user': "Customer Login", 
+                    'error': 'Invalid username or password'
+                })
 
         else:
-            return render(request, 'loginApp/login.html', context={'form': form, 'user': "Customer Login", 'error': 'Invalid username or password'})
-    return render(request, 'loginApp/login.html', context={'form': form, 'user': "Customer Login"})
-
+            return render(request, 'loginApp/login.html', {
+                'form': form, 
+                'user': "Customer Login", 
+                'error': 'Invalid form data'
+            })
+            
+    return render(request, 'loginApp/login.html', {'form': form, 'user': "Customer Login"})
 
 @login_required()
 def logout_view(request):
