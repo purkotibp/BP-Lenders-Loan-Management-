@@ -2,81 +2,96 @@
 {% load widget_tweaks %}
 {% load static %}
 
-{% block title_block %}
-Loan Request
-{% endblock %}
-
+{% block title_block %}Request Loan{% endblock %}
 
 {% block body_block %}
-
 {% include 'navbar.html' %}
-<div class="container my-5">
 
-    <div class="row mb-5">
-        <div class="p-5 m-auto rounded shadow-lg col-md-6 bg-body">
-            <h3 class="text-center text-success"> Request For Loan</h3>
-            </h3>
-            <form method="POST" class="my-5">
+<style>
+    /* Modern Glassmorphism Design */
+    .loan-request-container {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        min-height: 90vh;
+        padding: 50px 0;
+    }
+    .glass-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        color: white;
+    }
+    .form-control {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        color: white !important;
+    }
+    .form-control:focus {
+        background: rgba(255, 255, 255, 0.15) !important;
+        box-shadow: 0 0 10px rgba(0, 255, 127, 0.3);
+    }
+    .input-group-text {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: none;
+    }
+    .label-custom {
+        color: #00d1ff;
+        font-weight: 500;
+        margin-bottom: 5px;
+        display: block;
+    }
+</style>
 
-                {% csrf_token %}
+<div class="loan-request-container">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 m-auto">
+                <div class="glass-card p-5 shadow-lg">
+                    <h3 class="text-center mb-4" style="color: #00ff87;">🚀 Application for New Loan</h3>
+                    
+                    <form method="POST" enctype="multipart/form-data" class="mt-4">
+                        {% csrf_token %}
 
-
-                <div class="mb-4 input-group">
-                    <div class="input-group-text">Loan Category</div>
-                    {% render_field form.category|attr:'required:true' class="form-control" %}
-                </div>
-
-
-
-
-                <div class="mb-4 form-outline">
-
-                    {% render_field form.reason|attr:'required:true' class="form-control" %}
-                    <label class="form-label">Reason For Loan</label>
-                </div>
-
-                <div class="mb-4 form-outline">
-
-                    {% render_field form.amount|attr:'required:true' type="number" class="form-control" %}
-                    <label class="form-label">Request Amount</label>
-                </div>
-
-
-
-                <div class="mb-4 form-outline">
-
-                    {% render_field form.year|attr:'required:true' type="number" class="form-control" %}
-                    <label class="form-label">How many year for loan?</label>
-                </div>
-
-                <!-- 2 column grid layout for inline styling -->
-                <div class="mb-4 row ">
-                    <div class="col">
-                        <!-- Checkbox -->
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="" checked />
-                            <label class="form-check-label"> Remember me </label>
+                        <div class="mb-4">
+                            <label class="label-custom">Select Loan Category</label>
+                            <div class="input-group">
+                                {% render_field form.category class="form-control" %}
+                            </div>
                         </div>
-                    </div>
 
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label class="label-custom">Loan Amount (Rs.)</label>
+                                {% render_field form.amount class="form-control" placeholder="e.g. 50000 Rs." %}
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="label-custom">Duration (Years)</label>
+                                {% render_field form.year class="form-control" placeholder="Years" %}
+                            </div>
+                        </div>
 
+                        <div class="mb-4">
+                            <label class="label-custom">Reason for Loan</label>
+                            {% render_field form.reason class="form-control" rows="3" placeholder="Describe why you need this loan..." %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="label-custom">Supporting Document (PDF/JPG)</label>
+                            {% render_field form.document class="form-control" %}
+                            <small class="text-muted">Upload Citizenship ID or Salary Slip</small>
+                        </div>
+
+                        <button type="submit" class="btn btn-lg w-100 fw-bold" 
+                                style="background: linear-gradient(to right, #00ff87, #60efff); border: none; color: #1a1a2e;">
+                            Submit Application
+                        </button>
+                    </form>
                 </div>
-
-                <button type="submit" class="mb-4 btn btn-primary btn-block">Send Request</button>
-
-
-
-
-            </form>
+            </div>
         </div>
     </div>
-
-
-
-
-
 </div>
 
 {% include "footer.html" %}
-
 {% endblock %}

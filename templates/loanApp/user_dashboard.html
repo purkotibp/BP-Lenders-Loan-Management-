@@ -5,173 +5,202 @@
 {% block css_block %}
 <style>
     :root {
+        --sidebar-bg: #1e2746; /* MeroShare Navy Blue Style */
+        --main-bg: #0f172a;
         --glass-bg: rgba(255, 255, 255, 0.05);
-        --glass-border: rgba(255, 255, 255, 0.1);
         --accent-orange: #f59e0b;
+        --accent-blue: #00d1ff;
     }
 
     body {
-        background: #0f172a !important; /* Matches your premium theme */
+        background: var(--main-bg) !important;
+        margin: 0;
+        overflow-x: hidden;
         color: white;
     }
 
+    /* Layout Structure */
+    .dashboard-container {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    /* Sidebar - Fixed Left Side */
+    .sidebar {
+        width: 260px;
+        background: var(--sidebar-bg);
+        position: fixed;
+        height: 100vh;
+        z-index: 1000;
+        border-right: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .sidebar-brand {
+        padding: 25px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: white;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .sidebar-menu {
+        padding: 20px 0;
+        list-style: none;
+    }
+
+    .sidebar-item a {
+        padding: 12px 25px;
+        display: flex;
+        align-items: center;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        transition: 0.3s;
+        border-left: 4px solid transparent;
+    }
+
+    .sidebar-item a:hover, .sidebar-item.active a {
+        background: rgba(255,255,255,0.05);
+        color: white;
+        border-left: 4px solid var(--accent-blue);
+    }
+
+    .sidebar-item i { margin-right: 12px; width: 20px; }
+
+    /* Content Area - Right Side */
+    .main-content {
+        flex: 1;
+        margin-left: 260px;
+        padding: 40px;
+    }
+
+    /* Glass Cards Styling */
     .glass-card {
         background: var(--glass-bg);
         backdrop-filter: blur(12px);
-        border: 1px solid var(--glass-border);
-        border-radius: 20px;
-        padding: 24px;
-        transition: transform 0.3s ease;
-        height: 100%;
-    }
-
-    .glass-card:hover {
-        transform: translateY(-5px);
-        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 20px;
     }
 
     .stat-icon {
-        width: 45px;
-        height: 45px;
-        border-radius: 12px;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
         margin-bottom: 15px;
     }
 
-    /* Status Colors */
+    /* Status & Helper Colors */
     .bg-request { background: rgba(78, 164, 240, 0.2); color: #4ea4f0; }
-    .bg-approved { background: rgba(166, 76, 240, 0.2); color: #a64cf0; }
-    .bg-rejected { background: rgba(239, 83, 80, 0.2); color: #ef5350; }
     .bg-payable { background: rgba(144, 237, 125, 0.2); color: #90ed7d; }
     .bg-due { background: rgba(66, 165, 245, 0.2); color: #42a5f5; }
-
-    #digit {
-        font-family: 'Inter', sans-serif;
-        font-weight: 700;
-        font-size: 1.8rem;
+    
+    .btn-apply {
+        background: var(--accent-orange);
+        border: none;
+        color: #1a1a2e;
+        transition: 0.3s;
     }
-
-    .section-title {
-        border-left: 4px solid var(--accent-orange);
-        padding-left: 15px;
-        margin-bottom: 30px;
+    
+    .btn-apply:hover {
+        background: #d97706;
+        transform: scale(1.05);
     }
 </style>
 <script src="https://unpkg.com/lucide@latest"></script>
 {% endblock %}
 
 {% block body_block %}
-{% include 'navbar.html' %}
-
-<div class="container py-5">
-    <div class="section-title">
-        <h1 class="fw-bold text-white mb-1">Customer Dashboard</h1>
-        <p class="text-muted">Welcome back, {{ user.username }}. Here is your financial summary.</p>
+<div class="dashboard-container">
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            LOAN<span style="color: var(--accent-blue);">PRO</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item active">
+                <a href="{% url 'loanApp:user_dashboard' %}"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'loanApp:loan_request' %}"><i data-lucide="file-plus"></i> Apply for Loan</a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'loanApp:loan_payment' %}"><i data-lucide="credit-card"></i> Pay Interest</a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'loanApp:user_transaction' %}"><i data-lucide="history"></i> Transaction History</a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'loanApp:user_loan_history' %}"><i data-lucide="briefcase"></i> My Portfolio</a>
+            </li>
+            <li class="sidebar-item mt-5">
+                <a href="/account/logout/" class="text-danger"><i data-lucide="log-out"></i> Logout</a>
+            </li>
+        </ul>
     </div>
 
-    <div class="row g-4 mb-5">
-        <div class="col-md-4">
-            <div class="glass-card">
-                <div class="stat-icon bg-request">
-                    <i data-lucide="file-text"></i>
-                </div>
-                <h6 class="text-muted text-uppercase small fw-bold">Loan Requests</h6>
-                <h2 id="digit" class="text-white">{{ request }}</h2>
+    <div class="main-content">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h2 class="fw-bold mb-0">Dashboard</h2>
+                <p class="text-muted">Welcome back, {{ user.username }}</p>
             </div>
+            <a href="{% url 'loanApp:loan_payment' %}" class="btn btn-outline-info fw-bold">
+                <i data-lucide="zap" class="me-1" style="width: 16px;"></i> Quick Pay Interest
+            </a>
         </div>
-        <div class="col-md-4">
-            <div class="glass-card">
-                <div class="stat-icon bg-approved">
-                    <i data-lucide="check-circle"></i>
-                </div>
-                <h6 class="text-muted text-uppercase small fw-bold">Approved Applications</h6>
-                <h2 id="digit" class="text-white">{{ approved }}</h2>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="glass-card">
-                <div class="stat-icon bg-rejected">
-                    <i data-lucide="x-circle"></i>
-                </div>
-                <h6 class="text-muted text-uppercase small fw-bold">Rejected Loans</h6>
-                <h2 id="digit" class="text-white">{{ rejected }}</h2>
-            </div>
-        </div>
-    </div>
 
-    <h4 class="text-white mb-4">Financial Overview</h4>
-    <div class="row g-4">
-        <div class="col-md-6 col-lg-3">
-            <div class="glass-card">
-                <div class="stat-icon bg-payable">
-                    <i data-lucide="arrow-up-right"></i>
+        <div class="row g-4 mb-5">
+            <div class="col-md-3">
+                <div class="glass-card">
+                    <div class="stat-icon bg-request"><i data-lucide="file-text"></i></div>
+                    <small class="text-muted">REQUESTS</small>
+                    <h3 class="fw-bold mt-1">{{ request }}</h3>
                 </div>
-                <h6 class="text-muted text-uppercase small fw-bold">Total Payable</h6>
-                <h2 id="digit">
-                    {% if totalPayable %} Rs. {{ totalPayable|sub:0 }} {% else %} Rs. 0 {% endif %}
-                </h2>
+            </div>
+            <div class="col-md-3">
+                <div class="glass-card">
+                    <div class="stat-icon bg-payable"><i data-lucide="arrow-up-right"></i></div>
+                    <small class="text-muted">TOTAL PAYABLE</small>
+                    <h3 class="fw-bold mt-1">Rs. {{ totalPayable|default:"0" }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="glass-card">
+                    <div class="stat-icon" style="background: rgba(255, 117, 153, 0.2); color: #FF7599;"><i data-lucide="landmark"></i></div>
+                    <small class="text-muted">APPROVED AMT</small>
+                    <h3 class="fw-bold mt-1">Rs. {{ totalLoan|default:"0" }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="glass-card">
+                    <div class="stat-icon bg-due"><i data-lucide="alert-circle"></i></div>
+                    <small class="text-muted">TOTAL DUE</small>
+                    <h3 class="fw-bold mt-1" style="color: #42a5f5;">Rs. {{ totalPayable|sub:totalPaid|default:"0" }}</h3>
+                </div>
             </div>
         </div>
 
-        <div class="col-md-6 col-lg-3">
-            <div class="glass-card">
-                <div class="stat-icon" style="background: rgba(255, 117, 153, 0.2); color: #FF7599;">
-                    <i data-lucide="landmark"></i>
+        <div class="row mt-5">
+            <div class="col-lg-10 col-xl-8 mx-auto">
+                <div class="glass-card d-flex justify-content-between align-items-center" style="border-left: 4px solid var(--accent-orange); padding: 25px 40px;">
+                    <div>
+                        <h5 class="text-white mb-1">Need additional capital?</h5>
+                        <p class="text-muted small mb-0">Submit a new request or check your top-up eligibility.</p>
+                    </div>
+                    <a href="{% url 'loanApp:loan_request' %}" 
+                       class="btn btn-apply fw-bold px-4 py-2 ms-3">
+                       APPLY NOW
+                    </a>
                 </div>
-                <h6 class="text-muted text-uppercase small fw-bold">Approved Loan</h6>
-                <h2 id="digit">
-                    {% if totalLoan %} Rs. {{ totalLoan|sub:0 }} {% else %} Rs. 0 {% endif %}
-                </h2>
-            </div>
-        </div>
-
-        <div class="col-md-6 col-lg-3">
-            <div class="glass-card">
-                <div class="stat-icon bg-rejected">
-                    <i data-lucide="wallet"></i>
-                </div>
-                <h6 class="text-muted text-uppercase small fw-bold">Total Paid</h6>
-                <h2 id="digit">
-                    {% if totalPaid %} Rs. {{ totalPaid|sub:0 }} {% else %} Rs. 0 {% endif %}
-                </h2>
-            </div>
-        </div>
-
-        <div class="col-md-6 col-lg-3">
-            <div class="glass-card">
-                <div class="stat-icon bg-due">
-                    <i data-lucide="alert-circle"></i>
-                </div>
-                <h6 class="text-muted text-uppercase small fw-bold">Total Due</h6>
-                <h2 id="digit" style="color: #42a5f5;">
-                    {% if totalPayable or totalPaid %}
-                        Rs. {{ totalPayable|sub:totalPaid }}
-                    {% else %}
-                        Rs. 0
-                    {% endif %}
-                </h2>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mt-5">
-        <div class="col-12">
-            <div class="glass-card p-4 d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="text-white mb-0">Need more funds?</h5>
-                    <p class="text-muted small mb-0">Apply for a new loan or top up your current one.</p>
-                </div>
-                <a href="#" class="btn btn-warning fw-bold px-4" style="background: var(--accent-orange); border: none;">Apply Now</a>
             </div>
         </div>
     </div>
 </div>
 
-{% include 'footer.html' %}
-
 <script>
+    // Initialize icons
     lucide.createIcons();
 </script>
 {% endblock %}

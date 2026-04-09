@@ -7,8 +7,8 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-# Create your models here.
 
+# Create your models here.
 
 class loanCategory(models.Model):
     loan_name = models.CharField(max_length=250)
@@ -29,10 +29,15 @@ class loanRequest(models.Model):
         max_length=150, null=True, blank=True, default=None)
     reason = models.TextField()
     status = models.CharField(max_length=100, default='pending')
-    amount = models.PositiveIntegerField(default=0)
+    amount = models.PositiveIntegerField(
+        default=0,
+        help_text="Enter amount in Rs.",
+        verbose_name="Amount (Rs.)"
+    )
     year = models.PositiveIntegerField(default=1)
 
     document = models.FileField(upload_to='loan_docs/', null=True, blank=True)
+    
     def __str__(self):
         return self.customer.user.username
 
@@ -40,18 +45,30 @@ class loanRequest(models.Model):
 class CustomerLoan(models.Model):
     customer = models.ForeignKey(
         CustomerSignUp, on_delete=models.CASCADE, related_name='loan_user')
-    total_loan = models.PositiveIntegerField(default=0)
-    payable_loan = models.PositiveIntegerField(default=0)
+    total_loan = models.PositiveIntegerField(
+        default=0,
+        help_text="Total loan amount in Rs.",
+        verbose_name="Total Loan (Rs.)"
+    )
+    payable_loan = models.PositiveIntegerField(
+        default=0,
+        help_text="Total payable amount including interest in Rs.",
+        verbose_name="Payable Loan (Rs.)"
+    )
 
     def __str__(self):
         return self.customer.user.username
 
 
 class loanTransaction(models.Model):
-    # Choices to define the direction of money
     TRANSACTION_TYPES = (
         ('out', 'Loan Disbursement (Out)'),
         ('in', 'EMI Collection (In)'),
+    )
+
+    PAYMENT_CATEGORIES = (
+        ('interest', 'Interest Payment'),
+        ('principal', 'Loan Repayment (Principal)'),
     )
 
     customer = models.ForeignKey(
@@ -60,24 +77,54 @@ class loanTransaction(models.Model):
     transaction = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False)
     
-    # Adding the category field
     category = models.CharField(max_length=10, choices=TRANSACTION_TYPES, default='in')
     
-    payment = models.PositiveIntegerField(default=0)
+    payment_type = models.CharField(
+        max_length=20, 
+        choices=PAYMENT_CATEGORIES, 
+        default='interest'
+    )
+    
+    payment = models.PositiveIntegerField(
+        default=0,
+        help_text="Enter payment amount in Rs.",
+        verbose_name="Payment Amount (Rs.)"
+    )
     payment_date = models.DateField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.customer.user.username} - {self.get_category_display()}"
+        return f"{self.customer.user.username} - {self.get_payment_type_display()}"
+    
 
 class EMIPayment(models.Model):
     loan = models.ForeignKey(
         loanRequest, on_delete=models.CASCADE, related_name='emi_payments')
     installment_no = models.PositiveIntegerField()
     due_date = models.DateField()
-    emi_amount = models.DecimalField(max_digits=12, decimal_places=2)
-    principal_component = models.DecimalField(max_digits=12, decimal_places=2)
-    interest_component = models.DecimalField(max_digits=12, decimal_places=2)
-    balance = models.DecimalField(max_digits=12, decimal_places=2)
+    emi_amount = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2,
+        help_text="EMI amount in Rs.",
+        verbose_name="EMI Amount (Rs.)"
+    )
+    principal_component = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2,
+        help_text="Principal component in Rs.",
+        verbose_name="Principal (Rs.)"
+    )
+    interest_component = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2,
+        help_text="Interest component in Rs.",
+        verbose_name="Interest (Rs.)"
+    )
+    balance = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2,
+        help_text="Remaining balance in Rs.",
+        verbose_name="Balance (Rs.)"
+    )
     is_paid = models.BooleanField(default=False)
     paid_date = models.DateField(null=True, blank=True)
 
@@ -89,16 +136,11 @@ class EMIPayment(models.Model):
 
 
 def _generate_emi_schedule(loan_instance):
-    """
-    Generate EMI amortization schedule for a loanRequest.
-    Uses annual interest rate of 12% (same rate used across the system).
-    """
     ANNUAL_RATE = Decimal('0.12')
     principal = Decimal(str(loan_instance.amount))
     months = int(loan_instance.year) * 12
     monthly_rate = ANNUAL_RATE / 12
 
-    # Standard EMI formula: P * r * (1+r)^n / ((1+r)^n - 1)
     if monthly_rate == 0:
         emi = (principal / months).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     else:
@@ -106,7 +148,6 @@ def _generate_emi_schedule(loan_instance):
         emi = (principal * monthly_rate * factor / (factor - 1)).quantize(
             Decimal('0.01'), rounding=ROUND_HALF_UP)
 
-    # Delete any existing schedule before regenerating
     EMIPayment.objects.filter(loan=loan_instance).delete()
 
     balance = principal
@@ -115,7 +156,6 @@ def _generate_emi_schedule(loan_instance):
 
     for i in range(1, months + 1):
         interest = (balance * monthly_rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-        # On last installment adjust for rounding drift
         if i == months:
             principal_component = balance
             emi_amount = balance + interest
@@ -138,24 +178,32 @@ def _generate_emi_schedule(loan_instance):
 
     EMIPayment.objects.bulk_create(emi_records)
 
-
-# Attach the method to loanRequest
 loanRequest.generate_emi_schedule = _generate_emi_schedule
+
 @receiver(post_save, sender=EMIPayment)
 def delete_loan_on_completion(sender, instance, **kwargs):
-    """
-    Automatically deletes the loanRequest and associated data 
-    once the final EMI installment is marked as paid.
-    """
     loan = instance.loan
-    
-    # Check if this specific save was marking an EMI as paid
     if instance.is_paid:
-        # Check if there are ANY installments still left to pay
         has_pending_emi = EMIPayment.objects.filter(loan=loan, is_paid=False).exists()
-        
         if not has_pending_emi:
-            # All EMIs are paid! Delete the loan request.
-            # Because of models.CASCADE, this will also clean up the EMI table.
-            print(f"Loan ID {loan.id} for {loan.customer.user.username} is fully paid. Deleting record...")
+            print(f"Loan ID {loan.id} fully paid. Deleting record...")
             loan.delete()
+
+
+# At the very bottom of models.py
+
+@receiver(post_save, sender=loanTransaction)
+def update_schedule_on_payment(sender, instance, created, **kwargs):
+    if created:
+        # 1. Find the first 'Pending' installment for this customer
+        # We order by installment_no so it pays them in order (1, 2, 3...)
+        next_emi = EMIPayment.objects.filter(
+            loan__customer=instance.customer, 
+            is_paid=False
+        ).order_by('installment_no').first()
+
+        # 2. If we find one, mark it as Paid and save it
+        if next_emi:
+            next_emi.is_paid = True
+            next_emi.paid_date = instance.payment_date # Marks the date of payment
+            next_emi.save() # This is the part that changes the status in your table

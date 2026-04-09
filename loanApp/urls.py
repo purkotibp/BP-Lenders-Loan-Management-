@@ -1,9 +1,10 @@
 from django.urls import path
 from . import views
 
-
 app_name = 'loanApp'
+
 urlpatterns = [
+    path('', views.home, name='home'),
     path('loan-request/', views.loan_request_view, name='loan_request'),
     path('loan-payment/', views.LoanPayment, name='loan_payment'),
     path('user-transaction/', views.UserTransaction, name='user_transaction'),

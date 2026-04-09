@@ -18,12 +18,13 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
     <title>
         {% block title_block %} BP Lenders | Loan Management System {% endblock %}
     </title>
 
     <style>
-        /* Global foundation for the project */
         :root {
             --primary-dark: #0a1128;
             --accent-orange: #f89500;
@@ -32,15 +33,23 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--primary-dark);
-            /* Sets default for smooth page transitions */
             color: #ffffff;
             margin: 0;
             padding: 0;
         }
 
-        /* Smooth scrolling for better UX */
         html {
             scroll-behavior: smooth;
+        }
+
+        /* Custom styling for SweetAlert to match your dark theme */
+        .swal2-popup {
+            background: #1e2746 !important;
+            color: #ffffff !important;
+            border-radius: 15px !important;
+        }
+        .swal2-title, .swal2-html-container {
+            color: #ffffff !important;
         }
     </style>
 
@@ -54,6 +63,28 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/3.6.0/mdb.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if messages %}
+                {% for message in messages %}
+                    Swal.fire({
+                        title: 'Success!',
+                        text: "{{ message }}",
+                        icon: '{{ message.tags }}', // Automatically handles 'success', 'error', etc.
+                        background: '#1e2746',
+                        color: '#ffffff',
+                        confirmButtonColor: '#f89500', // Matches your --accent-orange
+                        timer: 4000,
+                        showConfirmButton: false,
+                        timerProgressBar: true
+                    });
+                {% endfor %}
+            {% endif %}
+        });
+    </script>
 
     {% block block_js %}{% endblock %}
 </body>

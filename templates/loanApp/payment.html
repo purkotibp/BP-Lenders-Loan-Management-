@@ -2,54 +2,140 @@
 {% load widget_tweaks %}
 {% load static %}
 
-{% block title_block %}
-User Login
+{% block css_block %}
+<style>
+    :root {
+        --sidebar-bg: #1e2746;
+        --main-bg: #0f172a;
+        --glass-bg: rgba(255, 255, 255, 0.05);
+        --accent-blue: #00d1ff;
+    }
+    body { background: var(--main-bg) !important; margin: 0; color: white; }
+    .dashboard-container { display: flex; min-height: 100vh; }
+    .sidebar { width: 260px; background: var(--sidebar-bg); position: fixed; height: 100vh; z-index: 1000; border-right: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-brand { padding: 25px; font-size: 1.5rem; font-weight: bold; color: white; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .sidebar-menu { padding: 20px 0; list-style: none; }
+    .sidebar-item a { padding: 12px 25px; display: flex; align-items: center; color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.3s; border-left: 4px solid transparent; }
+    .sidebar-item a:hover, .sidebar-item.active a { background: rgba(255,255,255,0.05); color: white; border-left: 4px solid var(--accent-blue); }
+    .sidebar-item i { margin-right: 12px; width: 20px; }
+    .main-content { flex: 1; margin-left: 260px; padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .glass-payment-card { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 40px; width: 100%; max-width: 480px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
+    .balance-badge { background: rgba(0, 209, 255, 0.1); border: 1px dashed var(--accent-blue); border-radius: 12px; padding: 15px; margin-bottom: 25px; }
+    .user-tag { background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 5px 15px; border-radius: 50px; display: inline-block; font-size: 0.8rem; font-weight: 600; margin-bottom: 15px; }
+    .form-control, select.form-control { background: rgba(255, 255, 255, 0.05) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; color: white !important; padding: 12px !important; border-radius: 10px !important; }
+    select.form-control option { background: #1e2746; color: white; }
+    .btn-pay { background: var(--accent-blue); color: #1e2746; border: none; padding: 15px; font-weight: bold; border-radius: 10px; width: 100%; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; }
+    .btn-pay:hover { background: #00b8e6; transform: translateY(-2px); }
+</style>
+<script src="https://unpkg.com/lucide@latest"></script>
 {% endblock %}
 
-
 {% block body_block %}
+<div class="dashboard-container">
+    <div class="sidebar">
+        <div class="sidebar-brand">LOAN<span style="color: var(--accent-blue);">PRO</span></div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item"><a href="{% url 'loanApp:user_dashboard' %}"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+            <li class="sidebar-item"><a href="{% url 'loanApp:loan_request' %}"><i data-lucide="file-plus"></i> Apply for Loan</a></li>
+            <li class="sidebar-item active"><a href="{% url 'loanApp:loan_payment' %}"><i data-lucide="credit-card"></i> Pay Interest</a></li>
+            <li class="sidebar-item"><a href="{% url 'loanApp:user_transaction' %}"><i data-lucide="history"></i> Transaction History</a></li>
+            <li class="sidebar-item"><a href="{% url 'loanApp:user_loan_history' %}"><i data-lucide="briefcase"></i> My Portfolio</a></li>
+            <li class="sidebar-item mt-5"><a href="/account/logout/" class="text-danger"><i data-lucide="log-out"></i> Logout</a></li>
+        </ul>
+    </div>
 
-{% include 'navbar.html' %}
-<div class="container my-5">
+    <div class="main-content">
+        <div class="glass-payment-card">
+            <div class="text-center">
+                <div class="user-tag">{{ user.username }}</div>
+                <h3 class="fw-bold mb-1">Loan Payment</h3>
+                <div class="balance-badge">
+                    <p class="text-muted small text-uppercase mb-1" style="letter-spacing: 1px;">Current Total Due</p>
+                    <h4 class="fw-bold mb-0 text-white">Rs. {{ total_due }}</h4>
+                </div>
+            </div>
 
-    <div class="row">
-        <div class="p-5 m-auto rounded shadow-lg col-md-4 bg-body">
-            <h3 class="text-center text-success">{{user}} </h3>
-            <form method="POST" class="my-5">
-
+            <form method="POST">
                 {% csrf_token %}
-
-
-
-                <div class="mb-4 form-outline">
-
-                    {% render_field form.payment|attr:'required:true' class="form-control" %}
-                    <label class="form-label">Payment amount</label>
+                
+                <div class="mb-3 text-start">
+                    <label class="form-label small text-muted text-uppercase fw-bold">Select Loan Account</label>
+                    <select class="form-control" name="loan_account" id="loan_account" required>
+                        {% for loan in customer_loans %}
+                            <option value="{{ loan.id }}">
+                                Loan #{{ loan.id }} - [{{ loan.category.loan_name }}]
+                            </option>
+                        {% empty %}
+                            <option disabled>No active loans found</option>
+                        {% endfor %}
+                    </select>
                 </div>
 
-                <button type="submit" class="mb-4 btn btn-primary btn-block">Payment</button>
+                <div class="mb-3 text-start">
+                    <label class="form-label small text-muted text-uppercase fw-bold">Payment Method</label>
+                    <select class="form-control" name="payment_method">
+                        <option value="esewa">eSewa Wallet</option>
+                        <option value="khalti">Khalti</option>
+                    </select>
+                </div>
 
+                <div class="mb-3 text-start">
+                    <label class="form-label small text-muted text-uppercase fw-bold">Payment Purpose</label>
+                    <select class="form-control" name="payment_type" id="payment_type" required>
+                        <option value="interest">Interest Payment Only</option>
+                        <option value="principal">Principal Repayment (Reduce Loan)</option>
+                    </select>
+                </div>
 
+                <div class="mb-4 text-start">
+                    <label class="form-label small text-muted text-uppercase fw-bold">Amount to Pay (Rs.)</label>
+                    {% render_field form.payment|attr:'required:true' class="form-control" id="payment_amount" placeholder="0.00" %}
+                </div>
 
+                <button type="submit" class="btn btn-pay">Proceed to Payment</button>
+            </form>
         </div>
-
-        <!-- Submit button -->
-
-        <!-- Register buttons -->
-
-
-
-
-        </form>
     </div>
 </div>
 
+<script>
+    lucide.createIcons();
 
+    // 1. Parse the JSON map from the view
+    // The |safe filter ensures Django doesn't escape the quotes
+    const interestData = {{ interest_json|safe }};
 
+    const loanSelect = document.getElementById('loan_account');
+    const typeSelect = document.getElementById('payment_type');
+    const amountInput = document.getElementById('payment_amount');
 
+    function updatePaymentAmount() {
+        const selectedLoanId = loanSelect.value;
+        const selectedType = typeSelect.value;
 
-</div>
+        if (selectedType === 'interest') {
+            // 2. Fetch the interest from our map using the Loan ID
+            const interestValue = interestData[selectedLoanId] || 0;
+            
+            // 3. Set value and lock the field
+            amountInput.value = parseFloat(interestValue).toFixed(2);
+            amountInput.setAttribute('readonly', true);
+            amountInput.style.opacity = "0.6";
+            amountInput.style.cursor = "not-allowed";
+        } else {
+            // 4. Unlock for manual principal payments
+            amountInput.value = "";
+            amountInput.removeAttribute('readonly');
+            amountInput.style.opacity = "1";
+            amountInput.style.cursor = "text";
+        }
+    }
 
-{% include "footer.html" %}
+    // Event Listeners
+    loanSelect.addEventListener('change', updatePaymentAmount);
+    typeSelect.addEventListener('change', updatePaymentAmount);
 
+    // Run once on load to catch default selection
+    window.onload = updatePaymentAmount;
+</script>
 {% endblock %}

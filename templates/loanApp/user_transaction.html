@@ -1,79 +1,192 @@
 {% extends 'base.html' %}
-
 {% load static %}
-
-
-
-
 
 {% block css_block %}
 <style>
-    .main-section {
-        margin-bottom: 500px;
+    :root {
+        --sidebar-bg: #1e2746;
+        --main-bg: #0f172a;
+        --glass-bg: rgba(255, 255, 255, 0.05);
+        --accent-blue: #00d1ff;
+    }
+
+    body {
+        background: var(--main-bg) !important;
+        margin: 0;
+        color: white;
+    }
+
+    .dashboard-container {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    /* Sidebar - Matching Dashboard */
+    .sidebar {
+        width: 260px;
+        background: var(--sidebar-bg);
+        position: fixed;
+        height: 100vh;
+        z-index: 1000;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-brand {
+        padding: 25px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: white;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .sidebar-menu {
+        padding: 20px 0;
+        list-style: none;
+    }
+
+    .sidebar-item a {
+        padding: 12px 25px;
+        display: flex;
+        align-items: center;
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        transition: 0.3s;
+        border-left: 4px solid transparent;
+    }
+
+    .sidebar-item a:hover,
+    .sidebar-item.active a {
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+        border-left: 4px solid var(--accent-blue);
+    }
+
+    .sidebar-item i {
+        margin-right: 12px;
+        width: 20px;
+    }
+
+    /* Main Content Area */
+    .main-content {
+        flex: 1;
+        margin-left: 260px;
+        padding: 40px;
+    }
+
+    /* Glass Table Design */
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 25px;
+    }
+
+    .table {
+        color: white !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .table thead th {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--accent-blue);
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+    }
+
+    .table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .table td {
+        padding: 15px;
+        vertical-align: middle;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .status-badge {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: bold;
     }
 </style>
-
+<script src="https://unpkg.com/lucide@latest"></script>
 {% endblock %}
 
 {% block body_block %}
-
-{% include 'navbar.html' %}
-<div class="container my-5 ">
-    <h1 class="text-center text-primary">My Payment Transaction</h1>
-    <div class="my-5 users main-section">
-
-
-
-        <table class="table text-center table-light table-hover table-bordered table-striped">
-            <thead class="bg-dark ">
-                <tr class="text-dark ">
-                    <th scope="col">SL</th>
-
-                    <th scope="col">User ID</th>
-                    <th scope="col">Username</th>
-
-                    <th scope="col">Payment Amount</th>
-                    <th scope="col">Transaction ID</th>
-                    <th scope="col">Date</th>
-
-                    <th scope="col">Customer Email</th>
-
-
-                </tr>
-            </thead>
-            <tbody>
-                {% for loan in transactions %}
-
-                <tr>
-                    <th scope="row">{{forloop.counter}}</th>
-
-                    <td>{{loan.customer.id}}</td>
-                    <td>{{loan.customer}}</td>
-
-
-                    <td>{{loan.payment}} Tk</td>
-                    <td>{{loan.transaction}}</td>
-                    <td>{{loan.payment_date}}</td>
-                    <td>{{loan.customer.user.email}}</td>
-
-
-                </tr>
-                {% endfor %}
-
-            </tbody>
-
-        </table>
-
-
-
-
-
+<div class="dashboard-container">
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            LOAN<span style="color: var(--accent-blue);">PRO</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item">
+                <a href="{% url 'loanApp:user_dashboard' %}"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'loanApp:loan_request' %}"><i data-lucide="file-plus"></i> Apply for Loan</a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'loanApp:loan_payment' %}"><i data-lucide="credit-card"></i> Pay Interest</a>
+            </li>
+            <li class="sidebar-item active">
+                <a href="{% url 'loanApp:user_transaction' %}"><i data-lucide="history"></i> Transaction History</a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'loanApp:user_loan_history' %}"><i data-lucide="briefcase"></i> My Portfolio</a>
+            </li>
+            <li class="sidebar-item mt-5">
+                <a href="/account/logout/" class="text-danger"><i data-lucide="log-out"></i> Logout</a>
+            </li>
+        </ul>
     </div>
 
+    <div class="main-content">
+        <div class="mb-5">
+            <h2 class="fw-bold mb-0">Payment Transactions</h2>
+            <p class="text-muted">Review your recent payments and transaction details.</p>
+        </div>
 
-
+        <div class="glass-card">
+            <div class="table-responsive">
+                <table class="table text-center mb-0">
+                    <thead>
+                        <tr>
+                            <th>SN</th>
+                            <th>Transaction ID</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loan in transactions %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td class="text-info font-monospace">{{ loan.transaction }}</td>
+                            <td class="fw-bold">Rs. {{ loan.payment }}</td>
+                            <td class="text-muted">{{ loan.payment_date|date:"M d, Y" }}</td>
+                            <td><span class="status-badge">Completed</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="py-5 text-muted">No transactions found for your account.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
-{% include 'footer.html' %}
-
+<script>
+    lucide.createIcons();
+</script>
 {% endblock %}

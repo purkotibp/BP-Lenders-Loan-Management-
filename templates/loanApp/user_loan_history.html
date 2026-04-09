@@ -1,97 +1,216 @@
 {% extends 'base.html' %}
-
 {% load static %}
-
-
-{% block block_js %}
-<script>
-
-</script>
-{% endblock %}
-
 
 {% block css_block %}
 <style>
+    :root {
+        --sidebar-bg: #1e2746;
+        --main-bg: #0f172a;
+        --glass-bg: rgba(255, 255, 255, 0.05);
+        --accent-blue: #00d1ff;
+    }
 
+    body {
+        background: var(--main-bg) !important;
+        margin: 0;
+        color: white;
+    }
+
+    .dashboard-container {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+        width: 260px;
+        background: var(--sidebar-bg);
+        position: fixed;
+        height: 100vh;
+        z-index: 1000;
+        border-right: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .sidebar-brand {
+        padding: 25px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: white;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .sidebar-menu {
+        padding: 20px 0;
+        list-style: none;
+    }
+
+    .sidebar-item a {
+        padding: 12px 25px;
+        display: flex;
+        align-items: center;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        transition: 0.3s;
+        border-left: 4px solid transparent;
+    }
+
+    .sidebar-item a:hover, .sidebar-item.active a {
+        background: rgba(255,255,255,0.05);
+        color: white;
+        border-left: 4px solid var(--accent-blue);
+    }
+
+    .sidebar-item i { margin-right: 12px; width: 20px; }
+
+    /* Main Content Area */
+    .main-content {
+        flex: 1;
+        margin-left: 260px;
+        padding: 40px;
+    }
+
+    /* Glass Table Design */
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 25px;
+    }
+
+    .table {
+        color: white !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .table thead th {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--accent-blue);
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .table td {
+        padding: 15px;
+        vertical-align: middle;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 0.9rem;
+    }
+
+    /* Status Badges - Updated to match DB values */
+    .badge-approved { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+    .badge-pending { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    .badge-rejected { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+    
+    .btn-view {
+        background: rgba(0, 209, 255, 0.1);
+        color: var(--accent-blue);
+        border: 1px solid var(--accent-blue);
+        font-size: 0.8rem;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+
+    .btn-view:hover {
+        background: var(--accent-blue);
+        color: #1e2746;
+    }
 </style>
-
+<script src="https://unpkg.com/lucide@latest"></script>
 {% endblock %}
 
 {% block body_block %}
-{% include 'navbar.html' %}
-<div class="container my-5">
-    <h1 class="text-center text-primary">Loan Request History</h1>
-    <div class="my-5 users">
-
-
-
-        <table class="table text-center table-light table-hover table-bordered table-striped">
-            <thead class="bg-dark ">
-                <tr class="text-dark ">
-                    <th scope="col">SL</th>
-                    <th scope="col">Loan ID</th>
-                    <th scope="col">User ID</th>
-                    <th scope="col">Username</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Category</th>
-                    <th scope="col">Request Amount</th>
-                    <th scope="col">Request Date</th>
-                    <th scope="col">Year</th>
-                    <th scope="col">Email</th>
-                    <th scope="col">EMI Schedule</th>
-
-
-                </tr>
-            </thead>
-            <tbody>
-                {% for loan in loans %}
-
-                <tr>
-                    <th scope="row">{{forloop.counter}}</th>
-                    <td>{{loan.id}}</td>
-                    <td>{{loan.customer.id}}</td>
-                    <td>{{loan}}</td>
-                    <td>
-                        <button type="button" class="px-3 text-white btn btn-info btn-sm">
-                            {{loan.status}}
-                        </button>
-                    </td>
-                    <!-- <td> <img src="/media/{{user.profile_picture}}" alt="Profile Pic" height="40px" width="40px" />
-                    </td> -->
-                    <td>{{loan.category}}</td>
-                    <td>{{loan.amount}} Tk</td>
-                    <td>{{loan.request_date}}</td>
-                    <td>{{loan.year}}</td>
-                    <td>{{loan.customer.user.email}}</td>
-                    <td>
-                        {% if loan.status == 'approved' %}
-                        <a href="{% url 'loanApp:emi_schedule' loan.id %}"
-                           class="btn btn-primary btn-sm px-3">
-                            <i class="fas fa-table me-1"></i> View Schedule
-                        </a>
-                        {% else %}
-                        <span class="text-muted small">N/A</span>
-                        {% endif %}
-                    </td>
-
-
-
-                </tr>
-                {% endfor %}
-
-            </tbody>
-
-        </table>
-
-
-
-
-
+<div class="dashboard-container">
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            LOAN<span style="color: var(--accent-blue);">PRO</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item">
+                <a href="{% url 'loanApp:user_dashboard' %}"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'loanApp:loan_request' %}"><i data-lucide="file-plus"></i> Apply for Loan</a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'loanApp:loan_payment' %}"><i data-lucide="credit-card"></i> Pay Interest</a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'loanApp:user_transaction' %}"><i data-lucide="history"></i> Transaction History</a>
+            </li>
+            <li class="sidebar-item active">
+                <a href="{% url 'loanApp:user_loan_history' %}"><i data-lucide="briefcase"></i> My Portfolio</a>
+            </li>
+            <li class="sidebar-item mt-5">
+                <a href="{% url 'logout' %}" class="text-danger"><i data-lucide="log-out"></i> Logout</a>
+            </li>
+        </ul>
     </div>
 
+    <div class="main-content">
+        <div class="mb-5">
+            <h2 class="fw-bold mb-0">Loan Request History</h2>
+            <p class="text-muted">Track your applications and view repayment schedules.</p>
+        </div>
 
-
+        <div class="glass-card">
+            <div class="table-responsive">
+                <table class="table text-center mb-0">
+                    <thead>
+                        <tr>
+                            <th>SL</th>
+                            <th>Loan ID</th>
+                            <th>Status</th>
+                            <th>Category</th>
+                            <th>Amount</th>
+                            <th>Request Date</th>
+                            <th>EMI Schedule</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loan in loans %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td class="text-muted">#{{ loan.id }}</td>
+                            <td>
+                                {# Checking for 'approved' lowercase to match your screenshot #}
+                                {% if loan.status == 'approved' or loan.status == 'APPROVED' %}
+                                    <span class="badge rounded-pill badge-approved px-3 py-2 text-uppercase">APPROVED</span>
+                                {% elif loan.status == 'rejected' or loan.status == 'REJECTED' %}
+                                    <span class="badge rounded-pill badge-rejected px-3 py-2 text-uppercase">REJECTED</span>
+                                {% else %}
+                                    <span class="badge rounded-pill badge-pending px-3 py-2 text-uppercase">{{ loan.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ loan.category }}</td>
+                            
+                            {# FIXED: Changed loan.request_amount to loan.amount #}
+                            <td class="fw-bold text-white">Rs. {{ loan.amount }}</td>
+                            
+                            <td class="text-muted">{{ loan.request_date|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="{% url 'loanApp:emi_schedule' loan.id %}" class="btn btn-view btn-sm px-3">
+                                    <i data-lucide="calendar" class="me-1" style="width: 14px; height: 14px;"></i>
+                                    VIEW SCHEDULE
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="py-5 text-muted">You haven't applied for any loans yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
-{% include 'footer.html'%}
+<script>
+    lucide.createIcons();
+</script>
 {% endblock %}
